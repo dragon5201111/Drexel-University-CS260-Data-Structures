@@ -95,8 +95,48 @@ void deleteList(List * myList){
 	free(myList);
 }
 
+int setCapacity(List * myList, int cap){
+	if(myList == NULL || myList->data == NULL){
+		printf("No list to set capacity on!\n");
+		return -1;
+	}
+
+	if(cap <= 0){
+		printf("Capacity must be greater than 0.\n");
+		return -2;
+	}
+
+	Entry ** newBlock = (Entry **) realloc(myList->data, sizeof(Entry *) * cap);
+
+    if (newBlock == NULL) {
+        printf("Failed to set capacity. Memory reallocation failed.\n");
+        return -3;
+    }
+
+    myList->data = newBlock;
+    myList->capacity = cap;
+
+	return 0;
+}
+
+void doubleCapacity(List * myList){
+	if(setCapacity(myList, myList->capacity * 2) < 0){
+		printf("Unable to double capacity of list!\n");
+		return;
+	}
+}
+
+void halveCapacity(List * myList){
+	if(setCapacity(myList, myList->capacity / 2) < 0){
+		printf("Unable to halve capacity of list!\n");
+		return;
+	}
+}
+
 List* initializeList();
 
+
+int setCapacity(List * myList, int cap);
 void deleteList(List* myList);
 
 void doubleCapacity(List* myList);
@@ -154,7 +194,7 @@ int main(int argc, char** argv)
 	
 	List* myList;
 	// Uncomment the following function call when you implement the initializeList() function
-	// myList = initializeList(); 
+	myList = initializeList(); 
 	
 	while ((lineSize = getline(&line, &lineBuffSize, fp)) != -1)
 	{
@@ -250,7 +290,7 @@ int main(int argc, char** argv)
 		else if (strcmp(token, "deleteList") == 0)
 		{
 			// Uncomment the following deleteList function call when you have implemented it
-			// deleteList(myList);
+			deleteList(myList);
 		}
 		else
 		{
