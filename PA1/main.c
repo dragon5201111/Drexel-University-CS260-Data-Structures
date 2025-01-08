@@ -206,9 +206,9 @@ void deleteFromHead(List * myList){
 	freeEntry(myList->data[0]);
 	myList->data[0] = NULL;
 
-	for (int i = 1; i < myList->size - 1; i++)
+	for (int i = 1; i < myList->size; i++)
 	{
-		myList->data[i] = myList->data[i + 1];
+		myList->data[i - 1] = myList->data[i];
 	}
 
 	myList->size--;
@@ -233,61 +233,59 @@ int findPosition(List* myList, char* name){
 	return -1;
 }
 
-void insertToPosition(List* myList, int position, char* name, char* lastname, float height, int age){
-	if(myList == NULL){
-			printf("No list to insert into.\n");
-			return;
-	}
-	
-	if(position >=0 && position <= myList->size){
+void insertToPosition(List* myList, int position, char* name, char* lastname, float height, int age) {
+    if(myList == NULL) {
+        printf("No list to insert into.\n");
+        return;
+    }
 
-		if(myList->size == myList->capacity){
-			doubleCapacity(myList);
-		}
-		
-		for(int i = myList->size - 1; i >= position; i--) {
-    		myList->data[i + 1] = myList->data[i];
-		}
+    if(position < 0 || position > myList->size) {
+        printf("Cannot insert at position: %d. Invalid position.\n", position);
+        return;
+    }
 
-		myList->data[position] = initializeEntry(name, lastname, height, age);
-		myList->size++;
+    if(myList->size == myList->capacity) {
+        doubleCapacity(myList);
+    }
 
-	}else{
-		printf("Cannot insert at position: %d\n. Invalid.", position);
-	}
+    for(int i = myList->size - 1; i >= position; i--) {
+        myList->data[i + 1] = myList->data[i];
+    }
+
+    myList->data[position] = initializeEntry(name, lastname, height, age);
+    myList->size++;
 }
 
-void deleteFromPosition(List* myList, int position){
-    if(myList == NULL){
+
+void deleteFromPosition(List* myList, int position) {
+    if(myList == NULL) {
         printf("No list to delete from.\n");
         return;
     }
 
-    if(myList->size == 0){
+    if(myList->size == 0) {
         printf("No entries in the list to delete.\n");
         return;
     }
 
-    if(position >= 0 && position < myList->size){
-        
-        freeEntry(myList->data[position]);
-
-        for (int i = position; i < myList->size - 1; i++){
-            myList->data[i] = myList->data[i + 1];
-        }
-
-        myList->data[myList->size - 1] = NULL;
-
-        myList->size--;
-
-        if(myList->size < myList->capacity / 2){
-            halveCapacity(myList);
-        }
-    } else {
+    if(position < 0 || position >= myList->size) {
         printf("Deletion position out of bounds.\n");
+        return;
+    }
+
+    freeEntry(myList->data[position]);
+
+    for(int i = position; i < myList->size - 1; i++) {
+        myList->data[i] = myList->data[i + 1];
+    }
+
+    myList->data[myList->size - 1] = NULL;
+    myList->size--;
+
+    if(myList->size < myList->capacity / 2) {
+        halveCapacity(myList);
     }
 }
-
 
 List* initializeList();
 
@@ -311,6 +309,8 @@ void deleteFromHead(List* myList);
 void deleteFromTail(List* myList);
 
 void deleteFromPosition(List* myList, int position);
+
+
 
 // Given a pointer to a List struct, this function prints each Entry in that list (NO NEED TO CHANGE).
 void printList(List* myList)
