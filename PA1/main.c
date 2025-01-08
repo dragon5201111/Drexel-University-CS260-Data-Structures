@@ -206,9 +206,9 @@ void deleteFromHead(List * myList){
 	freeEntry(myList->data[0]);
 	myList->data[0] = NULL;
 
-	for (int i = 1; i < myList->size; i++)
+	for (int i = 1; i < myList->size - 1; i++)
 	{
-		myList->data[i - 1] = myList->data[i];
+		myList->data[i] = myList->data[i + 1];
 	}
 
 	myList->size--;
@@ -256,6 +256,38 @@ void insertToPosition(List* myList, int position, char* name, char* lastname, fl
 		printf("Cannot insert at position: %d\n. Invalid.", position);
 	}
 }
+
+void deleteFromPosition(List* myList, int position){
+    if(myList == NULL){
+        printf("No list to delete from.\n");
+        return;
+    }
+
+    if(myList->size == 0){
+        printf("No entries in the list to delete.\n");
+        return;
+    }
+
+    if(position >= 0 && position < myList->size){
+        
+        freeEntry(myList->data[position]);
+
+        for (int i = position; i < myList->size - 1; i++){
+            myList->data[i] = myList->data[i + 1];
+        }
+
+        myList->data[myList->size - 1] = NULL;
+
+        myList->size--;
+
+        if(myList->size < myList->capacity / 2){
+            halveCapacity(myList);
+        }
+    } else {
+        printf("Deletion position out of bounds.\n");
+    }
+}
+
 
 List* initializeList();
 
@@ -400,7 +432,7 @@ int main(int argc, char** argv)
 			position = atoi(strtok(NULL, delimiter));
 			
 			// Uncomment the following deleteFromPosition function call when you have implemented it
-			// deleteFromPosition(myList, position);
+			deleteFromPosition(myList, position);
 		}
 		else if (strcmp(token, "printList") == 0)
 		{

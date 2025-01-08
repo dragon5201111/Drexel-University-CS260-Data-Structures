@@ -1,7 +1,8 @@
 insertToTail foo bar 1 1
 insertToTail car bar 2 2
 insertToTail soo woon 2 2
-insertToPosition 1 front bar 1 2
-printList
+insertToTail coo woon 2 2
+deleteFromPosition 2
 printListInfo
+printList
 deleteList
