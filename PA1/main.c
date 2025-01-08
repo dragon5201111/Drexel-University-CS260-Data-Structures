@@ -61,7 +61,7 @@ void freeEntry(Entry* entry)
 }
 
 List * initializeList(){
-	List * newList = (List *) malloc(sizeof(List *));
+	List * newList = (List *) malloc(sizeof(List));
 	
 	if(newList == NULL){
 		printf("Unable to allocate memory for list.\n");
@@ -86,12 +86,15 @@ void deleteList(List * myList){
 		printf("No list to delete!\n");
 		return;
 	}
+	
+	if(myList->data != NULL){
+		for(size_t i = 0; i < myList->size; i++){
+			freeEntry(myList->data[i]);
+		}
 
-	for(size_t i = 0; i < myList->size; i++){
-		freeEntry(myList->data[i]);
+		free(myList->data);
 	}
 
-	free(myList->data);
 	free(myList);
 }
 
@@ -133,8 +136,43 @@ void halveCapacity(List * myList){
 	}
 }
 
-List* initializeList();
+void insertToTail(List* myList, char* name, char* lastname, float height, int age){
+	if(myList == NULL){
+		printf("No list to insert onto tail.\n");
+		return;
+	}
 
+	if(myList->size + 1 > myList->capacity){
+		doubleCapacity(myList);
+	}
+
+	myList->data[myList->size++] = initializeEntry(name, lastname, height, age);
+}
+
+void insertToHead(List* myList, char* name, char* lastname, float height, int age){
+	if(myList == NULL){
+		printf("No list to insert before head.\n");
+		return;
+	}
+
+	if(myList->size + 1 > myList->capacity){
+		doubleCapacity(myList);
+	}
+
+	if(myList->size == 0){
+		insertToTail(myList, name, lastname, height, age);
+	}else{
+		for(int i = myList->size - 1; i >= 0; i--) {
+    		myList->data[i + 1] = myList->data[i];
+		}
+
+		myList->data[0] = initializeEntry(name, lastname, height, age);
+		myList->size++;
+	}
+
+}
+
+List* initializeList();
 
 int setCapacity(List * myList, int cap);
 void deleteList(List* myList);
@@ -220,7 +258,7 @@ int main(int argc, char** argv)
 			height = atof(strtok(NULL, delimiter));
 			age = atoi(strtok(NULL, delimiter));
 			// Uncomment the following insertToHead function call when you have implemented it
-			// insertToHead(myList, name, lastname, height, age);
+			insertToHead(myList, name, lastname, height, age);
 		}
 		else if (strcmp(token, "insertToTail") == 0)
 		{
@@ -234,7 +272,7 @@ int main(int argc, char** argv)
 			height = atof(strtok(NULL, delimiter));
 			age = atoi(strtok(NULL, delimiter));
 			// Uncomment the following insertToTail function call when you have implemented it
-			// insertToTail(myList, name, lastname, height, age);
+			insertToTail(myList, name, lastname, height, age);
 		}
 		else if (strcmp(token, "insertToPosition") == 0)
 		{
