@@ -1,3 +1,5 @@
+IN_FILE = input3.txt
+
 main: main.o
 	gcc main.o -o main
 main.o: main.c
@@ -7,4 +9,8 @@ clean:
 	-rm *.o
 run: main
 	./main
-.PHONY: clean run
+
+runVal: main
+	valgrind --tool=memcheck --leak-check=yes ./main $(IN_FILE)
+
+.PHONY: clean run runVal
