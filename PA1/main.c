@@ -88,7 +88,7 @@ void deleteList(List * myList){
 	}
 	
 	if(myList->data != NULL){
-		for(size_t i = 0; i < myList->size; i++){
+		for(int i = 0; i < myList->size; i++){
 			freeEntry(myList->data[i]);
 		}
 

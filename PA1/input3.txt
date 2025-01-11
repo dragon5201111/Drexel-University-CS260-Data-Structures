@@ -1,14 +1,4 @@
 insertToTail foo bar 1 1
-insertToTail car bar 2 2
-insertToTail soo woon 2 2
-insertToTail coo woon 2 2
-deleteFromPosition 2
-deleteFromPosition 0
-deleteFromPosition 0
-printList
-printListInfo
-deleteFromPosition 0
-printListInfo
-"foo bar"
+insertToPosition 1 david anderssonn 1.75 28
 printList
 deleteList

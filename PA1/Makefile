@@ -1,4 +1,4 @@
-IN_FILE = input2.txt
+IN_FILE = input3.txt
 
 main: main.o
 	gcc main.o -o main
