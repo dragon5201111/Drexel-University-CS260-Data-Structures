@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "common.h"
 
 void mergeSort(int [], int);
 void mergeArr(int [], int [], int [], int);
-void printArray(int [], int);
 
 int main(void){
     int arr[] = {6,5,1,4,6,23,4,5,6,7,90, 14};
@@ -77,13 +77,3 @@ void mergeArr(int leftArr [], int rightArr [],int arr [], int arrSize){
     }
 
 }
-
-
-void printArray(int arr [], int arrSize){
-    for (int i = 0; i < arrSize; i++)
-    {
-        printf(i == arrSize - 1 ? "%d" : "%d,", arr[i]);
-    }
-    putchar('\n');
-}
-

@@ -1,4 +1,11 @@
-insertToTail foo bar 1 1
-insertToPosition 1 david anderssonn 1.75 28
+insertToHead figgo nnlzu 1.58 52
+insertToHead viarm invnz 1.67 57
+insertToPosition 1 hpqnk tspaa 1.19 7
+insertToPosition 3 ylqia hquhq 1.35 9
+insertToTail nywey jroci 1.76 68
 printList
-deleteList
+printListInfo
+deleteFromHead
+deleteFromTail
+printList
+printListInfo
