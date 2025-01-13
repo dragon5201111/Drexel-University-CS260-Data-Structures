@@ -4,13 +4,15 @@
 
 
 void swap(int[], int, int);
-void quickSortHelper(int[], int, int);
+void quickSortHelperN(int[], int, int);
+void quickSortHelperM(int [], int, int);
 void quickSortN(int[], int);
+void quickSortM(int[], int);
 
 int main(void){
-    int arr3[] = {1,7,6,9,10};
+    int arr3[] = {1,7,3,2,5,6,7,8};
     int arrSize3 = sizeof(arr3) / sizeof(arr3[0]);
-    runSortAlgAndPrint(&quickSortN, arr3, arrSize3);
+    runSortAlgAndPrint(&quickSortM, arr3, arrSize3);
 }
 
 void swap(int arr [], int i, int j){
@@ -23,16 +25,44 @@ void swap(int arr [], int i, int j){
 
 //Pivot is first element; N is for naive implementation
 void quickSortN(int arr[], int arrSize){
-    quickSortHelper(arr, 0, arrSize);
+    quickSortHelperN(arr, 0, arrSize);
 }
 
-void quickSortHelper(int arr[], int left, int right){
+//Pivot is middle element
+void quickSortM(int arr[], int arrSize){
+    quickSortHelperM(arr, 0, arrSize);
+}
+
+void quickSortHelperM(int arr[], int left, int right) {
+    if (left >= right) return;
+
+    int midIndx = (left + right) / 2;
+    int i = left;
+    int j = right;
+    int pivot = arr[midIndx];
+
+    while (i <= j) {
+        while (arr[i] < pivot) i++;
+
+        while (arr[j] > pivot) j--;
+
+        if (i <= j) {
+            swap(arr, i, j);
+            i++;
+            j--;
+        }
+    }
+
+    quickSortHelperM(arr, left, j);
+    quickSortHelperM(arr, i, right);
+}
+
+
+void quickSortHelperN(int arr[], int left, int right){
     if(left >= right) return;
 
     int pivot = arr[left];
     int i = left + 1, j = left + 1;
-
-    int foundGTPivot = 0;
 
     while(j < right){
         if(arr[j] < pivot){
@@ -42,6 +72,6 @@ void quickSortHelper(int arr[], int left, int right){
         j++;
     }
     swap(arr, left, i - 1); // Swap pivot
-    quickSortHelper(arr, left, i - 1);
-    quickSortHelper(arr, i, right);
+    quickSortHelperN(arr, left, i - 1);
+    quickSortHelperN(arr, i, right);
 }   

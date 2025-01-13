@@ -10,6 +10,14 @@ void printArray(int arr [], int arrSize){
     putchar('\n');
 }
 
+void printArrayR(int arr[], int begin, int end){
+    if(begin < 0 || end < 0 || end <= begin) return;
+
+    for(; begin < end; begin++){
+        printf(begin == end - 1 ? "%d" : "%d,", arr[begin]);
+    }
+    putchar('\n');
+}
 
 void runSortAlgAndPrint(void (*fPtr)(int[], int), int arr[], int size){
     printf("Before sorting: ");
