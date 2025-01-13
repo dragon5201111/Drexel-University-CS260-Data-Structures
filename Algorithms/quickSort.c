@@ -10,8 +10,7 @@ void quickSortN(int[], int);
 int main(void){
     int arr3[] = {1,7,6,9,10};
     int arrSize3 = sizeof(arr3) / sizeof(arr3[0]);
-    quickSortN(arr3, arrSize3);
-    printArray(arr3, arrSize3);
+    runSortAlgAndPrint(&quickSortN, arr3, arrSize3);
 }
 
 void swap(int arr [], int i, int j){
@@ -22,7 +21,7 @@ void swap(int arr [], int i, int j){
     arr[j] = temp;
 }
 
-//Pivot is first element.
+//Pivot is first element; N is for naive implementation
 void quickSortN(int arr[], int arrSize){
     quickSortHelper(arr, 0, arrSize);
 }

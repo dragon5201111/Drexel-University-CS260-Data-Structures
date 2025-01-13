@@ -9,9 +9,7 @@ void mergeArr(int [], int [], int [], int);
 int main(void){
     int arr[] = {6,5,1,4,6,23,4,5,6,7,90, 14};
     int arrSize = sizeof(arr)/sizeof(int);
-    mergeSort(arr, arrSize);
-    printf("Result:");
-    printArray(arr, arrSize);
+    runSortAlgAndPrint(&mergeSort, arr, arrSize);
     return 0;
 }
 
@@ -38,6 +36,7 @@ void mergeSort(int arr[], int arrSize){
 
     mergeSort(leftArr, leftSize);
     mergeSort(rightArr, rightSize);
+    /*
     putchar('\n');
     printf("After sort:\n");
     printf("Right:");
@@ -46,9 +45,12 @@ void mergeSort(int arr[], int arrSize){
     printArray(leftArr, leftSize);
     printf("Orig:");
     printArray(arr, arrSize);
+    */
     mergeArr(leftArr, rightArr, arr, arrSize);
+    /*
     printf("After merge:");
     printArray(arr, arrSize);
+    */
 }
 
 void mergeArr(int leftArr [], int rightArr [],int arr [], int arrSize){

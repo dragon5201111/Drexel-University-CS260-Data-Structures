@@ -1,11 +1,18 @@
-TARGET_C = quickSort.c
-TARGET_N = run
-GCC_ARGS = common.c
+CC = gcc
+CFLAGS = -c
 
-$(TARGET_N): $(TARGET_C)
-	gcc $(GCC_ARGS) $(TARGET_C) -o $(TARGET_N)
+TARGET_RUN = run
+
+OBJ = quickSort.o common.o
+
+$(TARGET_RUN): $(OBJ)
+	$(CC) $(OBJ) -o $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) $<
 
 clean:
-	-rm $(TARGET_N)
+	-rm *.o
+	-rm $(TARGET_RUN)
 
 .PHONY: clean
