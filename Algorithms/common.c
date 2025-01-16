@@ -26,3 +26,11 @@ void runSortAlgAndPrint(void (*fPtr)(int[], int), int arr[], int size){
     (*fPtr)(arr, size);
     printArray(arr, size);
 }
+
+void swap(int arr [], int i, int j){
+    if(i < 0 || j < 0) return;
+
+    int temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+}

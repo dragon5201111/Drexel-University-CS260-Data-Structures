@@ -1,8 +1,6 @@
 #include "common.h"
 #include "stdio.h"
 
-
-
 void swap(int[], int, int);
 void quickSortHelperN(int[], int, int);
 void quickSortHelperM(int [], int, int);
@@ -15,13 +13,6 @@ int main(void){
     runSortAlgAndPrint(&quickSortM, arr3, arrSize3);
 }
 
-void swap(int arr [], int i, int j){
-    if(i < 0 || j < 0) return;
-
-    int temp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = temp;
-}
 
 //Pivot is first element; N is for naive implementation
 void quickSortN(int arr[], int arrSize){
