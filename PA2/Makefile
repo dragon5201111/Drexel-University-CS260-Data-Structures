@@ -14,4 +14,7 @@ run: main
 runVal: main
 	valgrind --tool=memcheck --leak-check=yes ./main $(DICT_FILE) $(QUERY_FILE)
 
+runTime: main
+	time ./main $(DICT_FILE) $(QUERY_FILE)
+
 .PHONY: clean run runVal

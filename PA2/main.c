@@ -9,52 +9,6 @@ typedef struct item{
   int weight;
 }Item;
 
-Item ** allocDict(int);
-void freeDict(Item **, int);
-
-char ** allocQueries(int);
-void freeQueries(char **, int);
-
-Item ** allocDict(int size){
-    Item ** dict = (Item **) malloc(sizeof(Item *) * size);
-
-    if(dict == NULL){
-        printf("Unable to allocate memory for dictionary.\n");
-        return NULL;
-    }
-
-    for(int i = 0; i < size; i++){
-        dict[i] = (Item *) malloc(sizeof(Item));
-
-        if (dict[i] == NULL) {
-            printf("Unable to allocate memory for Item %d\n", i);
-            return NULL;
-        }
-
-        dict[i]->word = NULL;
-    }
-
-    return dict;
-}
-
-void freeDict(Item **dict, int size) {
-    if (dict == NULL) {
-        printf("No dictionary to free!\n");
-        return;
-    }
-
-    // Free each item in the dictionary
-    for (int i = 0; i < size; i++) {
-        if (dict[i] != NULL) {
-            if (dict[i]->word != NULL) {
-                free(dict[i]->word);
-            }
-            free(dict[i]);
-        }
-    }
-    free(dict);
-}
-
 int main(int argc, char **argv) {
     char *dictionaryFilePath = argv[1]; //this keeps the path to dictionary file
     char *queryFilePath = argv[2]; //this keeps the path to the file that keeps a list of query wrods, 1 query per line
@@ -88,15 +42,6 @@ int main(int argc, char **argv) {
     //This might be a good place to allocate memory for your data structure, by the size of "wordCount"
     ////////////////////////////////////////////////////
     
-    Item ** dictionaryWords = allocDict(wordCount);
-
-
-    if(dictionaryWords == NULL){
-        printf("Unable to allocate memory for dictionary.\n");
-        return -1;
-    }
-
-    
     //Read the file once more, this time to fill in the data into memory
     fseek(fp, 0, SEEK_SET);// rewind to the beginning of the file, before reading it line by line.
     char word[BUFSIZE]; //to be used for reading lines in the loop below
@@ -110,15 +55,6 @@ int main(int argc, char **argv) {
         /////////////////PAY ATTENTION HERE/////////////////
         //This might be a good place to store the dictionary words into your data structure
         ////////////////////////////////////////////////////
-        dictionaryWords[i]->weight = weight;
-        dictionaryWords[i]->word = (char *) malloc(sizeof(char) * (strlen(word) + 1));  // +1 for null terminator
-
-        if (dictionaryWords[i]->word == NULL) {
-            printf("Unable to allocate for dictionary word.\n");
-            return -1;
-        }
-
-        strcpy(dictionaryWords[i]->word, word);
     }
     //close the input file
     fclose(fp);
@@ -130,7 +66,6 @@ int main(int argc, char **argv) {
         
     //check if the file is accessible, just to make sure...
     if(fp == NULL){
-        free(dictionaryWords);
         fprintf(stderr, "Error opening file:%s\n",queryFilePath);
         return -1;
     }
@@ -177,6 +112,6 @@ int main(int argc, char **argv) {
     // use the following to print a single line of outputs (assuming that the word and weight are stored in variables named word and weight, respectively): 
     // printf("%s %d\n",word,weight);
     // if there are more than 10 outputs to print, you should print the top 10 weighted outputs.
-    freeDict(dictionaryWords, wordCount);
+    
     return 0;
 }
