@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <time.h>
 
 #define BUFSIZE 256
 
@@ -10,7 +11,62 @@ typedef struct item{
   int weight;
 }Item;
 
+void freeDict(Item *, int);
+
+void swapDict(Item *, int, int);
+void qSortDictH(Item *, int, int);
+void qSortDict(Item *, int);
+int partitionDict(Item *, int, int);
+
+
+void freeDict(Item *dict, int size) {
+    for (int i = 0; i < size; i++) {
+        free(dict[i].word);
+    }
+    free(dict);
+}
+
+void swapDict(Item *dict, int i, int j){
+    Item temp = dict[i];
+    dict[i] = dict[j];
+    dict[j] = temp;
+}
+
+void qSortDictH(Item *dict, int low, int high){
+    if(low < high){
+        int piv = partitionDict(dict, low, high);
+        qSortDictH(dict, low, piv - 1);
+        qSortDictH(dict, piv + 1, high);
+    }
+}
+
+void qSortDict(Item *dict, int size){
+    qSortDictH(dict, 0, size - 1);
+}
+
+int partitionDict(Item *dict, int low, int high){
+    int randIndx = low + rand() % (high - low + 1);
+
+    swapDict(dict, randIndx, high);
+    Item pivot = dict[high];
+    
+    int i = low - 1;
+
+    for (int j = low; j <= high - 1; j++) {
+        if (strcmp(dict[j].word, pivot.word) < 0) {
+            i++;
+            swapDict(dict, i, j);
+        }
+    }
+    
+    swapDict(dict, i + 1, high);    
+    return i + 1;
+}
+
+
 int main(int argc, char **argv) {
+    srand(time(NULL)); // For quicksort function
+
     char *dictionaryFilePath = argv[1]; //this keeps the path to dictionary file
     char *queryFilePath = argv[2]; //this keeps the path to the file that keeps a list of query wrods, 1 query per line
     int wordCount=0; //this variable will keep a count of words in the dictionary, telling us how much memory to allocate
@@ -42,11 +98,19 @@ int main(int argc, char **argv) {
     /////////////////PAY ATTENTION HERE/////////////////
     //This might be a good place to allocate memory for your data structure, by the size of "wordCount"
     ////////////////////////////////////////////////////
+
+    Item * dictWords = (Item *) malloc(sizeof(Item) * wordCount);
+    
+    if(dictWords == NULL){
+        fprintf(stderr, "Unable to allocate space for dictionary words.\n");
+        return -1;
+    }
     
     //Read the file once more, this time to fill in the data into memory
     fseek(fp, 0, SEEK_SET);// rewind to the beginning of the file, before reading it line by line.
     char word[BUFSIZE]; //to be used for reading lines in the loop below
     int weight;
+
     for(int i = 0; i < wordCount; i++)
     {
         fscanf(fp, "%s %d\n",word,&weight);
@@ -56,7 +120,10 @@ int main(int argc, char **argv) {
         /////////////////PAY ATTENTION HERE/////////////////
         //This might be a good place to store the dictionary words into your data structure
         ////////////////////////////////////////////////////
+        dictWords[i].word = strdup(word);  // Copy word into the structure
+        dictWords[i].weight = weight; 
     }
+  
     //close the input file
     fclose(fp);
 
@@ -67,6 +134,7 @@ int main(int argc, char **argv) {
         
     //check if the file is accessible, just to make sure...
     if(fp == NULL){
+        freeDict(dictWords, wordCount);
         fprintf(stderr, "Error opening file:%s\n",queryFilePath);
         return -1;
     }
@@ -94,7 +162,7 @@ int main(int argc, char **argv) {
         
         /////////////////PAY ATTENTION HERE/////////////////
         //This might be a good place to store the query words in a list like data structure
-        ////////////////////////////////////////////////////   
+        ////////////////////////////////////////////////////
     }
     //close the input file
     fclose(fp);
@@ -113,6 +181,9 @@ int main(int argc, char **argv) {
     // use the following to print a single line of outputs (assuming that the word and weight are stored in variables named word and weight, respectively): 
     // printf("%s %d\n",word,weight);
     // if there are more than 10 outputs to print, you should print the top 10 weighted outputs.
+
+    qSortDict(dictWords, wordCount);
     
+    freeDict(dictWords, wordCount);
     return 0;
 }

@@ -1,4 +1,4 @@
-DICT_FILE = dict.txt
+DICT_FILE = simpsons_rand.txt
 QUERY_FILE = queries_1.txt
 
 main: main.o
