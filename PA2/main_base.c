@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <time.h>
 
 #define BUFSIZE 256
 
@@ -11,135 +9,7 @@ typedef struct item{
   int weight;
 }Item;
 
-void freeDict(Item *, int);
-
-void swapDict(Item *, int, int);
-int compareDict(Item *, int, int, int);
-void qSortDictH(Item *, int, int, int);
-void qSortDict(Item *, int, int);
-int partitionDict(Item *, int, int, int);
-
-int binSearchDictH(Item *, char *, int, int, int);
-int binSearchDict(Item *, char *, int);
-
-void procQueries(Item *, int, char **, int);
-void printSuggestions(Item *, int, char *, int);
-
-
-void freeDict(Item *dict, int size) {
-    for (int i = 0; i < size; i++) {
-        free(dict[i].word);
-    }
-    free(dict);
-}
-
-void swapDict(Item *dict, int i, int j){
-    Item temp = dict[i];
-    dict[i] = dict[j];
-    dict[j] = temp;
-}
-
-int compareDict(Item *dict, int i, int j, int sortByWord) {
-    if (sortByWord) {
-        return strcmp(dict[i].word, dict[j].word);
-    } else {
-        return dict[j].weight - dict[i].weight;
-    }
-}
-
-int partitionDict(Item *dict, int low, int high, int sortByWord) {
-    int randIndx = low + rand() % (high - low + 1);
-    swapDict(dict, randIndx, high);  // Swap with pivot
-    Item pivot = dict[high];
-
-    int i = low - 1;
-
-    for (int j = low; j <= high - 1; j++) {
-        if (compareDict(dict, j, high, sortByWord) < 0) {
-            i++;
-            swapDict(dict, i, j);
-        }
-    }
-
-    swapDict(dict, i + 1, high);
-    return i + 1;
-}
-
-void qSortDictH(Item *dict, int low, int high, int sortByWord) {
-    if (low < high) {
-        int piv = partitionDict(dict, low, high, sortByWord);
-        qSortDictH(dict, low, piv - 1, sortByWord);
-        qSortDictH(dict, piv + 1, high, sortByWord);
-    }
-}
-
-void qSortDict(Item *dict, int size, int sortByWord) {
-    qSortDictH(dict, 0, size - 1, sortByWord);
-}
-
-int binSearchDictH(Item *dict, char *target, int targetLen, int low, int high) {
-    int result = -1;
-
-    while (low <= high) {
-        int mid = low + (high - low) / 2;
-        char *currentWord = dict[mid].word;
-        
-        int cmpResult = strncmp(target, currentWord, targetLen);
-
-        if (cmpResult == 0) {
-            result = mid;
-            high = mid - 1;
-        } else if (cmpResult < 0) {
-            high = mid - 1;
-        } else {
-            low = mid + 1;
-        }
-    }
-
-    return result;
-}
-
-int binSearchDict(Item *dict, char *target, int high) {
-    return binSearchDictH(dict, target, strlen(target), 0, high - 1);
-}
-
-void procQueries(Item *dict, int dictSize, char **queries, int queryCount) {
-    for (int i = 0; i < queryCount; i++) {
-        printSuggestions(dict, dictSize, queries[i], strlen(queries[i]));
-    }
-}
-
-void printSuggestions(Item *dict, int dictSize, char *query, int queryLen) {
-    printf("Query word:%s\n", query);
-    int low = binSearchDict(dict, query, dictSize);
-
-    if (low == -1) {
-        printf("No suggestion!\n");
-        return;
-    }
-
-    Item matches[BUFSIZE];
-    int matchCount = 0;
-    int i = low;
-
-    // Collect matches, but stop at BUFSIZE or when no more matches are found
-    for (; strncmp(query, dict[i].word, queryLen) == 0 && i < dictSize && matchCount < BUFSIZE; i++) {
-        matches[matchCount++] = dict[i];  // Store match and increment matchCount
-    }
-
-    // Sort matches by weight in descending order
-    qSortDict(matches, matchCount, 0);
-
-    for(int j = 0; j < matchCount && j < 10; j++){
-        printf("%s %d\n", matches[j].word, matches[j].weight);
-    }
-}
-
-
-
 int main(int argc, char **argv) {
-    srand(time(NULL)); // For quicksort function
-
     char *dictionaryFilePath = argv[1]; //this keeps the path to dictionary file
     char *queryFilePath = argv[2]; //this keeps the path to the file that keeps a list of query wrods, 1 query per line
     int wordCount=0; //this variable will keep a count of words in the dictionary, telling us how much memory to allocate
@@ -171,19 +41,11 @@ int main(int argc, char **argv) {
     /////////////////PAY ATTENTION HERE/////////////////
     //This might be a good place to allocate memory for your data structure, by the size of "wordCount"
     ////////////////////////////////////////////////////
-
-    Item * dictWords = (Item *) malloc(sizeof(Item) * wordCount);
-    
-    if(dictWords == NULL){
-        fprintf(stderr, "Unable to allocate space for dictionary words.\n");
-        return -1;
-    }
     
     //Read the file once more, this time to fill in the data into memory
     fseek(fp, 0, SEEK_SET);// rewind to the beginning of the file, before reading it line by line.
     char word[BUFSIZE]; //to be used for reading lines in the loop below
     int weight;
-
     for(int i = 0; i < wordCount; i++)
     {
         fscanf(fp, "%s %d\n",word,&weight);
@@ -193,13 +55,7 @@ int main(int argc, char **argv) {
         /////////////////PAY ATTENTION HERE/////////////////
         //This might be a good place to store the dictionary words into your data structure
         ////////////////////////////////////////////////////
-        dictWords[i].word = strdup(word);  // Copy word into the structure
-        dictWords[i].weight = weight; 
     }
-
-    // Sort dictionary
-    qSortDict(dictWords, wordCount, 1);
-    
     //close the input file
     fclose(fp);
 
@@ -210,7 +66,6 @@ int main(int argc, char **argv) {
         
     //check if the file is accessible, just to make sure...
     if(fp == NULL){
-        freeDict(dictWords, wordCount);
         fprintf(stderr, "Error opening file:%s\n",queryFilePath);
         return -1;
     }
@@ -228,12 +83,6 @@ int main(int argc, char **argv) {
     /////////////////PAY ATTENTION HERE/////////////////
     //This might be a good place to allocate memory for storing query words, by the size of "queryCount"
     ////////////////////////////////////////////////////
-    char ** queryWords = (char **)malloc(sizeof(char *) * queryCount);
-
-    if(queryWords == NULL){
-        fprintf(stderr, "Unable to allocate memory for query words.\n");
-        return -1;
-    }
 
     fseek(fp, 0, SEEK_SET);// rewind to the beginning of the file, before reading it line by line.
     for(int i = 0; i < queryCount; i++)
@@ -244,8 +93,7 @@ int main(int argc, char **argv) {
         
         /////////////////PAY ATTENTION HERE/////////////////
         //This might be a good place to store the query words in a list like data structure
-        ////////////////////////////////////////////////////
-        queryWords[i] = strdup(word);
+        ////////////////////////////////////////////////////   
     }
     //close the input file
     fclose(fp);
@@ -264,16 +112,6 @@ int main(int argc, char **argv) {
     // use the following to print a single line of outputs (assuming that the word and weight are stored in variables named word and weight, respectively): 
     // printf("%s %d\n",word,weight);
     // if there are more than 10 outputs to print, you should print the top 10 weighted outputs.
-    procQueries(dictWords, wordCount, queryWords, queryCount);
-
-
-    // Free dictionary and query words
-    freeDict(dictWords, wordCount);
-
-    for(int i = 0; i < queryCount; i++){
-        free(queryWords[i]);
-    }
-
-    free(queryWords);
+    
     return 0;
 }
