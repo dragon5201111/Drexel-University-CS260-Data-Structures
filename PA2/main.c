@@ -122,9 +122,8 @@ void printSuggestions(Item *dict, int dictSize, char *query, int queryLen) {
     int matchCount = 0;
     int i = low;
 
-    // Collect matches, but stop at BUFSIZE or when no more matches are found
     for (; strncmp(query, dict[i].word, queryLen) == 0 && i < dictSize && matchCount < BUFSIZE; i++) {
-        matches[matchCount++] = dict[i];  // Store match and increment matchCount
+        matches[matchCount++] = dict[i];
     }
 
     // Sort matches by weight in descending order
