@@ -18,6 +18,7 @@ int compare(Item *, int, int, int);
 void qSortH(Item *, int, int, int);
 void qSort(Item *, int, int);
 int partition(Item *, int, int, int);
+int partition_r(Item *, int, int, int);
 
 int binSearchDictH(Item *, char *, int, int, int);
 int binSearchDict(Item *, char *, int);
@@ -47,34 +48,47 @@ int compare(Item *dict, int i, int j, int sortByWord) {
     }
 }
 
-int partition(Item *dict, int low, int high, int sortByWord) {
-    int randIndx = low + rand() % (high - low + 1);
-    swap(dict, randIndx, high);  // Swap with pivot
-    Item pivot = dict[high];
-
-    int i = low - 1;
-
-    for (int j = low; j <= high - 1; j++) {
-        if (compare(dict, j, high, sortByWord) < 0) {
-            i++;
-            swap(dict, i, j);
+int partition(Item * items, int low, int high, int sortByWord)
+{
+    Item pivot = items[high]; 
+   
+    int i = (low - 1); 
+ 
+    for (int j = low; j <= high - 1; j++) 
+    {
+        
+        if (compare(items, j, high, sortByWord) < 0) {
+            i++; 
+            swap(items, i, j);
         }
     }
-
-    swap(dict, i + 1, high);
-    return i + 1;
+    swap(items, i + 1, high);
+    return (i + 1);
 }
+ 
 
-void qSortH(Item *dict, int low, int high, int sortByWord) {
+int partition_r(Item * items, int low, int high, int sortByWord)
+{
+
+    srand(time(NULL));
+    int random = low + rand() % (high - low);
+ 
+    swap(items, random, high);
+ 
+    return partition(items, low, high, sortByWord);
+}
+ 
+void qSortH(Item * items, int low, int high, int sortByWord)
+{
     if (low < high) {
-        int piv = partition(dict, low, high, sortByWord);
-        qSortH(dict, low, piv - 1, sortByWord);
-        qSortH(dict, piv + 1, high, sortByWord);
+        int pi = partition_r(items, low, high, sortByWord);
+        qSortH(items, low, pi - 1, sortByWord);
+        qSortH(items, pi + 1, high, sortByWord);
     }
 }
 
-void qSort(Item *dict, int size, int sortByWord) {
-    qSortH(dict, 0, size - 1, sortByWord);
+void qSort(Item *items, int size, int sortByWord) {
+    qSortH(items, 0, size - 1, sortByWord);
 }
 
 
@@ -138,8 +152,6 @@ void printSuggestions(Item *dict, int dictSize, char *query, int queryLen) {
 
 
 int main(int argc, char **argv) {
-    srand(time(NULL)); // For quicksort function
-
     char *dictionaryFilePath = argv[1]; //this keeps the path to dictionary file
     char *queryFilePath = argv[2]; //this keeps the path to the file that keeps a list of query wrods, 1 query per line
     int wordCount=0; //this variable will keep a count of words in the dictionary, telling us how much memory to allocate
@@ -197,6 +209,7 @@ int main(int argc, char **argv) {
         dictWords[i].weight = weight; 
     }
 
+
     // Sort dictionary
     qSort(dictWords, wordCount, 1);
     
@@ -253,6 +266,7 @@ int main(int argc, char **argv) {
     ////////////////////////////////////////////////////////////////////////
     ///////////////////////// reading input is done ////////////////////////
     ////////////////////////////////////////////////////////////////////////
+    
     
     //Now it is your turn to do the magic!!!
     //do search/sort/print, whatever you think you need to do to satisfy the requirements of the assignment!
