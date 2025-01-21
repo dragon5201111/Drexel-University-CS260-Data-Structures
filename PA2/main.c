@@ -13,11 +13,11 @@ typedef struct item{
 
 void freeDict(Item *, int);
 
-void swapDict(Item *, int, int);
-int compareDict(Item *, int, int, int);
-void qSortDictH(Item *, int, int, int);
-void qSortDict(Item *, int, int);
-int partitionDict(Item *, int, int, int);
+void swap(Item *, int, int);
+int compare(Item *, int, int, int);
+void qSortH(Item *, int, int, int);
+void qSort(Item *, int, int);
+int partition(Item *, int, int, int);
 
 int binSearchDictH(Item *, char *, int, int, int);
 int binSearchDict(Item *, char *, int);
@@ -33,13 +33,13 @@ void freeDict(Item *dict, int size) {
     free(dict);
 }
 
-void swapDict(Item *dict, int i, int j){
+void swap(Item *dict, int i, int j){
     Item temp = dict[i];
     dict[i] = dict[j];
     dict[j] = temp;
 }
 
-int compareDict(Item *dict, int i, int j, int sortByWord) {
+int compare(Item *dict, int i, int j, int sortByWord) {
     if (sortByWord) {
         return strcmp(dict[i].word, dict[j].word);
     } else {
@@ -47,39 +47,39 @@ int compareDict(Item *dict, int i, int j, int sortByWord) {
     }
 }
 
-int partitionDict(Item *dict, int low, int high, int sortByWord) {
+int partition(Item *dict, int low, int high, int sortByWord) {
     int randIndx = low + rand() % (high - low + 1);
-    swapDict(dict, randIndx, high);  // Swap with pivot
+    swap(dict, randIndx, high);  // Swap with pivot
     Item pivot = dict[high];
 
     int i = low - 1;
 
     for (int j = low; j <= high - 1; j++) {
-        if (compareDict(dict, j, high, sortByWord) < 0) {
+        if (compare(dict, j, high, sortByWord) < 0) {
             i++;
-            swapDict(dict, i, j);
+            swap(dict, i, j);
         }
     }
 
-    swapDict(dict, i + 1, high);
+    swap(dict, i + 1, high);
     return i + 1;
 }
 
-void qSortDictH(Item *dict, int low, int high, int sortByWord) {
+void qSortH(Item *dict, int low, int high, int sortByWord) {
     if (low < high) {
-        int piv = partitionDict(dict, low, high, sortByWord);
-        qSortDictH(dict, low, piv - 1, sortByWord);
-        qSortDictH(dict, piv + 1, high, sortByWord);
+        int piv = partition(dict, low, high, sortByWord);
+        qSortH(dict, low, piv - 1, sortByWord);
+        qSortH(dict, piv + 1, high, sortByWord);
     }
 }
 
-void qSortDict(Item *dict, int size, int sortByWord) {
-    qSortDictH(dict, 0, size - 1, sortByWord);
+void qSort(Item *dict, int size, int sortByWord) {
+    qSortH(dict, 0, size - 1, sortByWord);
 }
+
 
 int binSearchDictH(Item *dict, char *target, int targetLen, int low, int high) {
     int result = -1;
-
     while (low <= high) {
         int mid = low + (high - low) / 2;
         char *currentWord = dict[mid].word;
@@ -112,26 +112,27 @@ void procQueries(Item *dict, int dictSize, char **queries, int queryCount) {
 void printSuggestions(Item *dict, int dictSize, char *query, int queryLen) {
     printf("Query word:%s\n", query);
     int low = binSearchDict(dict, query, dictSize);
-
     if (low == -1) {
         printf("No suggestion!\n");
         return;
     }
 
-    Item matches[BUFSIZE];
+    Item * matches = malloc(sizeof(Item) * BUFSIZE);
     int matchCount = 0;
     int i = low;
 
-    for (; strncmp(query, dict[i].word, queryLen) == 0 && i < dictSize && matchCount < BUFSIZE; i++) {
+    for (; i < dictSize && strncmp(query, dict[i].word, queryLen) == 0 && matchCount < BUFSIZE; i++) {
         matches[matchCount++] = dict[i];
     }
 
-    // Sort matches by weight in descending order
-    qSortDict(matches, matchCount, 0);
+    qSort(matches, matchCount, 0);
 
     for(int j = 0; j < matchCount && j < 10; j++){
         printf("%s %d\n", matches[j].word, matches[j].weight);
     }
+
+    free(matches);
+
 }
 
 
@@ -197,7 +198,7 @@ int main(int argc, char **argv) {
     }
 
     // Sort dictionary
-    qSortDict(dictWords, wordCount, 1);
+    qSort(dictWords, wordCount, 1);
     
     //close the input file
     fclose(fp);
@@ -229,7 +230,7 @@ int main(int argc, char **argv) {
     ////////////////////////////////////////////////////
     char ** queryWords = (char **)malloc(sizeof(char *) * queryCount);
 
-    if(queryWords == NULL){
+    if(!queryWords){
         fprintf(stderr, "Unable to allocate memory for query words.\n");
         return -1;
     }

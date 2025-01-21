@@ -1,0 +1,21 @@
+class 27
+class 2
+class 3
+class 4
+class 36
+class 5
+class 6
+class 7 
+class 8
+class 9 
+class 10
+som 2
+som 2
+som 2
+som 2
+som 2
+som 2
+som -1
+some 2
+so 1
+s

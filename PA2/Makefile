@@ -1,5 +1,5 @@
-DICT_FILE = movieScripts_shuffled.txt
-QUERY_FILE = queries_9k.txt
+DICT_FILE = dict_rand.txt
+QUERY_FILE = queries_1.txt
 
 main: main.o
 	gcc main.o -o main
