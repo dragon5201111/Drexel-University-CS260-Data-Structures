@@ -1,8 +1,8 @@
-DICT_FILE = simpsons_rand.txt
+DICT_FILE = dict_rand.txt
 QUERY_FILE = queries_1.txt
 
 main: main.o
-	gcc main.o -o main
+	gcc main.o -o main	
 main.o: main.c
 	gcc -c main.c
 clean:

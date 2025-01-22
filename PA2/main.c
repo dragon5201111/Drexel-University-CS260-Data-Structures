@@ -11,16 +11,24 @@ typedef struct item{
   int weight;
 }Item;
 
+
+int compare_items_by_word(const void *a, const void *b) {
+    Item *item1 = (Item *)a;
+    Item *item2 = (Item *)b;
+    return strcmp(item1->word, item2->word); // Compare words alphabetically
+}
+
+
 void freeDict(Item *, int);
 
 void swap(Item *, int, int);
-int compare(Item *, int, int, int);
+int compareItem(Item *, int, int, int);
 void qSortH(Item *, int, int, int);
 void qSort(Item *, int, int);
 int partition(Item *, int, int, int);
 
-int binSearchDictH(Item *, char *, int, int, int);
-int binSearchDict(Item *, char *, int);
+int binSearchItemsH(Item *, char *, int, int, int);
+int binSearchItems(Item *, char *, int);
 
 void procQueries(Item *, int, char **, int);
 void printSuggestions(Item *, int, char *, int);
@@ -33,55 +41,57 @@ void freeDict(Item *dict, int size) {
     free(dict);
 }
 
-void swap(Item *dict, int i, int j){
-    Item temp = dict[i];
-    dict[i] = dict[j];
-    dict[j] = temp;
+void swap(Item *item, int i, int j){
+    Item temp = item[i];
+    item[i] = item[j];
+    item[j] = temp;
 }
 
-int compare(Item *dict, int i, int j, int sortByWord) {
+int compareItem(Item *item, int i, int j, int sortByWord) {
     if (sortByWord) {
-        return strcmp(dict[i].word, dict[j].word);
+        return strcmp(item[i].word, item[j].word);
     } else {
-        return dict[j].weight - dict[i].weight;
+        return item[j].weight - item[i].weight;
     }
 }
 
-int partition(Item *dict, int low, int high, int sortByWord) {
+int partition(Item *items, int low, int high, int sortByWord) {
     int randIndx = low + rand() % (high - low + 1);
-    swap(dict, randIndx, high);  // Swap with pivot
-    Item pivot = dict[high];
+
+    swap(items, randIndx, high);
+    
+    Item pivot = items[high];
 
     int i = low - 1;
-
-    for (int j = low; j <= high - 1; j++) {
-        if (compare(dict, j, high, sortByWord) < 0) {
+    for (int j = low; j < high; j++) {
+        if (compareItem(items, j, high, sortByWord) < 0) {
             i++;
-            swap(dict, i, j);
+            swap(items, i, j);
         }
     }
 
-    swap(dict, i + 1, high);
+    swap(items, i + 1, high);
     return i + 1;
 }
 
-void qSortH(Item *dict, int low, int high, int sortByWord) {
+void qSortH(Item *items, int low, int high, int sortByWord) {
     if (low < high) {
-        int piv = partition(dict, low, high, sortByWord);
-        qSortH(dict, low, piv - 1, sortByWord);
-        qSortH(dict, piv + 1, high, sortByWord);
+        int piv = partition(items, low, high, sortByWord);
+        qSortH(items, low, piv - 1, sortByWord);
+        qSortH(items, piv + 1, high, sortByWord);
     }
 }
 
-void qSort(Item *dict, int size, int sortByWord) {
-    qSortH(dict, 0, size - 1, sortByWord);
+// QuickSort function
+void qSort(Item *items, int size, int sortByWord) {
+    qSortH(items, 0, size - 1, sortByWord);
 }
 
-int binSearchDictH(Item *dict, char *target, int targetLen, int low, int high) {
+int binSearchItemsH(Item *items, char *target, int targetLen, int low, int high) {
     int result = -1;
     while (low <= high) {
         int mid = low + (high - low) / 2;
-        char *currentWord = dict[mid].word;
+        char *currentWord = items[mid].word;
         
         int cmpResult = strncmp(target, currentWord, targetLen);
 
@@ -98,8 +108,8 @@ int binSearchDictH(Item *dict, char *target, int targetLen, int low, int high) {
     return result;
 }
 
-int binSearchDict(Item *dict, char *target, int high) {
-    return binSearchDictH(dict, target, strlen(target), 0, high - 1);
+int binSearchItems(Item *items, char *target, int high) {
+    return binSearchItemsH(items, target, strlen(target), 0, high - 1);
 }
 
 void procQueries(Item *dict, int dictSize, char **queries, int queryCount) {
@@ -110,31 +120,31 @@ void procQueries(Item *dict, int dictSize, char **queries, int queryCount) {
 
 void printSuggestions(Item *dict, int dictSize, char *query, int queryLen) {
     printf("Query word:%s\n", query);
-    int low = binSearchDict(dict, query, dictSize);
+    int low = binSearchItems(dict, query, dictSize);
     if (low == -1) {
         printf("No suggestion!\n");
         return;
     }
 
-    Item * matches = malloc(sizeof(Item) * BUFSIZE);
+    // Cannot assume matches could not be all of the dictionary
+    Item * matchBuffer = malloc(sizeof(Item) * dictSize);
     int matchCount = 0;
     int i = low;
     
-    for (; i < dictSize && strncmp(query, dict[i].word, queryLen) == 0 && matchCount < BUFSIZE; i++) {
-        matches[matchCount++] = dict[i];
+    for (; i < dictSize && strncmp(query, dict[i].word, queryLen) == 0 && matchCount < dictSize; i++) {
+        matchBuffer[matchCount++] = dict[i];
     }
 
-    qSort(matches, matchCount, 0);
+    qSort(matchBuffer, matchCount, 0);
 
+    // Print top 10, or at least try to
     for(int j = 0; j < matchCount && j < 10; j++){
-        printf("%s %d\n", matches[j].word, matches[j].weight);
+        printf("%s %d\n", matchBuffer[j].word, matchBuffer[j].weight);
     }
 
-    free(matches);
+    free(matchBuffer);
 
 }
-
-
 
 int main(int argc, char **argv) {
     srand(time(NULL)); // For quicksort function
@@ -196,9 +206,8 @@ int main(int argc, char **argv) {
         dictWords[i].weight = weight; 
     }
 
-    // Sort dictionary
     qSort(dictWords, wordCount, 1);
-    
+
     //close the input file
     fclose(fp);
 
