@@ -48,18 +48,16 @@ void swap(Item *item, int i, int j){
 }
 
 int compareItem(Item *item, int i, int j, int sortByWord) {
-    if (sortByWord) {
-        return strcmp(item[i].word, item[j].word);
-    } else {
-        return item[j].weight - item[i].weight;
-    }
+    if (sortByWord) return strcmp(item[i].word, item[j].word);
+
+    return item[j].weight - item[i].weight;
 }
 
 int partition(Item *items, int low, int high, int sortByWord) {
     int randIndx = low + rand() % (high - low + 1);
 
     swap(items, randIndx, high);
-    
+
     Item pivot = items[high];
 
     int i = low - 1;
@@ -82,7 +80,6 @@ void qSortH(Item *items, int low, int high, int sortByWord) {
     }
 }
 
-// QuickSort function
 void qSort(Item *items, int size, int sortByWord) {
     qSortH(items, 0, size - 1, sortByWord);
 }
@@ -131,10 +128,12 @@ void printSuggestions(Item *dict, int dictSize, char *query, int queryLen) {
     int matchCount = 0;
     int i = low;
     
+    // Fill buffer while there is a match and match count less than dictionary size
     for (; i < dictSize && strncmp(query, dict[i].word, queryLen) == 0 && matchCount < dictSize; i++) {
         matchBuffer[matchCount++] = dict[i];
     }
 
+    // Sort buffer numerically (i.e., by weight)
     qSort(matchBuffer, matchCount, 0);
 
     // Print top 10, or at least try to
@@ -147,7 +146,7 @@ void printSuggestions(Item *dict, int dictSize, char *query, int queryLen) {
 }
 
 int main(int argc, char **argv) {
-    srand(time(NULL)); // For quicksort function
+    srand(time(NULL)); // For quicksort function (i.e., random pivot selection)
 
     char *dictionaryFilePath = argv[1]; //this keeps the path to dictionary file
     char *queryFilePath = argv[2]; //this keeps the path to the file that keeps a list of query wrods, 1 query per line
@@ -206,6 +205,8 @@ int main(int argc, char **argv) {
         dictWords[i].weight = weight; 
     }
 
+
+    // Sort dictionary alphabetically
     qSort(dictWords, wordCount, 1);
 
     //close the input file
@@ -272,8 +273,9 @@ int main(int argc, char **argv) {
     // use the following to print a single line of outputs (assuming that the word and weight are stored in variables named word and weight, respectively): 
     // printf("%s %d\n",word,weight);
     // if there are more than 10 outputs to print, you should print the top 10 weighted outputs.
-    procQueries(dictWords, wordCount, queryWords, queryCount);
 
+    //Process and print queries (i.e., the bulk of this program)
+    procQueries(dictWords, wordCount, queryWords, queryCount);
 
     // Free dictionary and query words
     freeDict(dictWords, wordCount);
