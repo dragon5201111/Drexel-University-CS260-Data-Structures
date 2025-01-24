@@ -6,15 +6,15 @@ int main(void){
     return 0;
 }
 
-void initializeHeap(struct Heap * heap, int capacity){
+int initializeHeap(struct Heap * heap, int capacity){
     if(capacity < 1 || capacity > HEAP_MAX){
         printf(M_ERR_HEAP_INVALID_CAP);
-        return;
+        return M_ERR_HEAP_ALLOC;
     }
 
     if(heap == NULL){
         fprintf(stderr, M_ERR_HEAP_INIT);
-        return;
+        return M_ERR_HEAP_ALLOC;
     }
 
     heap->size = 0;
@@ -23,8 +23,10 @@ void initializeHeap(struct Heap * heap, int capacity){
 
     if(heap->arr == NULL){
         printf(M_ERR_HEAP_INIT);
-        return;
+        return M_ERR_HEAP_ALLOC;
     }
+
+    return M_SUCC_HEAP_ALLOC;
 }
 
 int leftChildI(int i){
