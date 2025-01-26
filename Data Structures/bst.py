@@ -1,6 +1,5 @@
 import random
 
-
 NODES=10
 RAND_MIN=0
 RAND_MAX=50
@@ -118,6 +117,8 @@ def print_node(root: Node, level = 0, prefix="Root: ") -> None:
         print_node(root.right, level + 1, "R---> ")
 
 if __name__ == "__main__":
+    # Populate BST randomly and delete one node 
+
     root = Node(random.randint(RAND_MIN, RAND_MAX))
     del_index = random.randint(0, NODES - 1)
     del_key = None
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     print_node(root)
 
     print()
-    
+
     print(f"Tree after deletion, key {rand_key}:")
     delete(root, rand_key)
     print_node(root)
