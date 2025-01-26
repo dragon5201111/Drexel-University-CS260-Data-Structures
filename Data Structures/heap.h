@@ -1,31 +1,43 @@
-#define HEAP_MAX 25000
-#define M_ERR_HEAP_INIT "Cannot initialize heap, NULL heap structure or error allocating memory.\n"
-#define M_ERR_HEAP_INVALID_CAP "Invalid capacity, out of range.\n"
-#define M_ERR_HEAP_ALLOC -1
-#define M_SUCC_HEAP_ALLOC 0
+#pragma once
+
+#define isInvalidCapacity(c) (c <= 0 || c >= INT_MAX)
+#define isInvalidValue(v) (v <= INT_MIN || v >= INT_MAX)
+
+#define M_INVALID_CAPACITY "Invalid capacity for heap.\n"
+#define M_NULL_HEAP "Error, heap cannot be null.\n"
+#define M_HEAP_ALLOC_ERROR "Unable to allocate memory for heap.\n"
+
+#define HEAP_SUCCESS 0
+#define HEAP_ERROR -1
 
 struct Heap{
     int size;
     int capacity;
-    int * arr;
+    int * items;
 };
 
-typedef struct Heap MinHeap;
-typedef struct Heap MaxHeap;
+/*
+    returns HEAP_ERROR on fail, HEAP_SUCCESS on success
+*/
+int isValidHeap(struct Heap *, int);
 
+void initializeHeap(struct Heap *, int);
 
-// returns M_SUCC_HEAP_ALLOC on success, M_ERR_HEAP_ALLOC on fail
-int initializeHeap(struct Heap *, int);
+/*
+    returns HEAP_ERROR on fail, HEAP_SUCCESS on success
+*/
+int doubleCapacityHeap(struct Heap *, int);
 
-// Returns left child index.
-int leftChildI(int);
+void freeHeap(struct Heap *, int);
 
-// Returns right child index.
-int rightChildI(int);
+/*
+    returns the ith index
+*/
+int heapParent(int);
+int heapRChild(int); 
+int heapLChild(int);
 
-// Returns parent index.
-int parentI(int);
+void swapHeap(int *, int *);
 
-void swap(int *, int *);
-void insertMin(MinHeap *, int);
-int extractMin(MinHeap *, int);
+void insertMin(struct Heap *, int, int);
+int extractMin(struct Heap *, int);
