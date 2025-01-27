@@ -42,25 +42,21 @@ void initializeHeap(struct Heap  * heap, int capacity){
     heap->capacity =capacity;
 }
 
-int doubleCapacityHeap(struct Heap * heap, int capacity){
-    if(isValidHeap(heap, capacity) == HEAP_ERROR) return HEAP_ERROR;
-
-    int * newItems = (int *) realloc(heap->items, sizeof(int) * (capacity * 2));
+int doubleCapacityHeap(struct Heap * heap){
+    int * newItems = (int *) realloc(heap->items, sizeof(int) * (heap->capacity * 2));
 
     if(newItems == NULL){
         fprintf(stderr, M_HEAP_ALLOC_ERROR);
         return HEAP_ERROR;
     }
 
-    heap->capacity = (capacity * 2);
+    heap->capacity = (heap->capacity * 2);
     heap->items = newItems;
 
     return HEAP_SUCCESS;
 }
 
-void freeHeap(struct Heap * heap, int capacity){
-    if(isValidHeap(heap, capacity) == HEAP_ERROR) return;
-    
+void freeHeap(struct Heap * heap, int capacity){    
     free(heap->items);
     heap->size = 0;
 }
@@ -71,17 +67,14 @@ void swapHeap(int * i, int * j){
     *j = temp;
 }
 
-void insertMin(struct Heap * heap, int value, int capacity){
+void insertMin(struct Heap * heap, int value){
     if(isInvalidValue(value)){
         fprintf(stderr, "Value out of range.\n");
         return;
     }
-
-    if(isValidHeap(heap, capacity) == HEAP_ERROR) return;
-
     // need to resize
     if((heap->size + 1) == heap->capacity){
-        if(doubleCapacityHeap(heap, capacity) == HEAP_ERROR) return;
+        if(doubleCapacityHeap(heap) == HEAP_ERROR) return;
     }
 
     heap->items[heap->size++] = value;
@@ -97,11 +90,7 @@ void insertMin(struct Heap * heap, int value, int capacity){
    
 }
 
-int extractMin(struct Heap * heap, int capacity) {
-    if (isValidHeap(heap, capacity) == HEAP_ERROR) {
-        return -1;
-    }
-
+int extractMin(struct Heap * heap) {
     if (heap->size == 0) {
         return -1;
     }
@@ -117,18 +106,19 @@ int extractMin(struct Heap * heap, int capacity) {
 
     int currentIndex = 0;
     int heapSize = heap->size;
+    int leftChildIndex, rightChildIndex, smallestIndex;
 
     while (currentIndex < heapSize) {
-        int leftIndex = heapLChild(currentIndex);
-        int rightIndex = heapRChild(currentIndex);
-        int smallestIndex = currentIndex;
+        leftChildIndex = heapLChild(currentIndex);
+        rightChildIndex = heapRChild(currentIndex);
+        smallestIndex = currentIndex;
 
-        if (leftIndex < heapSize && heap->items[leftIndex] < heap->items[smallestIndex]) {
-            smallestIndex = leftIndex;
+        if (leftChildIndex < heapSize && heap->items[leftChildIndex] < heap->items[smallestIndex]) {
+            smallestIndex = leftChildIndex;
         }
 
-        if (rightIndex < heapSize && heap->items[rightIndex] < heap->items[smallestIndex]) {
-            smallestIndex = rightIndex;
+        if (rightChildIndex < heapSize && heap->items[rightChildIndex] < heap->items[smallestIndex]) {
+            smallestIndex = rightChildIndex;
         }
 
         if (smallestIndex != currentIndex) {
@@ -141,3 +131,4 @@ int extractMin(struct Heap * heap, int capacity) {
 
     return minValue;
 }
+

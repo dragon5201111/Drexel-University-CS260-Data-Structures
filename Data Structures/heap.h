@@ -6,6 +6,7 @@
 #define M_INVALID_CAPACITY "Invalid capacity for heap.\n"
 #define M_NULL_HEAP "Error, heap cannot be null.\n"
 #define M_HEAP_ALLOC_ERROR "Unable to allocate memory for heap.\n"
+#define M_HEAP_DELETE_ERROR "Unable to delete from heap at index %d\n"
 
 #define HEAP_SUCCESS 0
 #define HEAP_ERROR -1
@@ -26,7 +27,7 @@ void initializeHeap(struct Heap *, int);
 /*
     returns HEAP_ERROR on fail, HEAP_SUCCESS on success
 */
-int doubleCapacityHeap(struct Heap *, int);
+int doubleCapacityHeap(struct Heap *);
 
 void freeHeap(struct Heap *, int);
 
@@ -39,5 +40,5 @@ int heapLChild(int);
 
 void swapHeap(int *, int *);
 
-void insertMin(struct Heap *, int, int);
-int extractMin(struct Heap *, int);
+void insertMin(struct Heap *, int);
+int extractMin(struct Heap *);
