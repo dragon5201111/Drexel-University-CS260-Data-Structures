@@ -4,6 +4,7 @@
         "vector": "cpp",
         "random": "cpp",
         "limits.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "adjacencylist.h": "c"
     }
 }
