@@ -55,10 +55,12 @@ AdjacencyList * createAdjacencyList(int vertices, int isDirected){
 
 void addEdge(AdjacencyList * adjacencyList, int src, int dest){
     Vertex * newNode = createVertex(dest);
+    // put dest in front of src list
     newNode->next = adjacencyList->vertices[src];
     adjacencyList->vertices[src] = newNode;
 
     if (!adjacencyList->isDirected) {
+        // put src in front of dest list
         newNode = createVertex(src);
         newNode->next = adjacencyList->vertices[dest];
         adjacencyList->vertices[dest] = newNode;
