@@ -56,7 +56,7 @@ int doubleCapacityHeap(struct Heap * heap){
     return HEAP_SUCCESS;
 }
 
-void freeHeap(struct Heap * heap, int capacity){    
+void freeHeap(struct Heap * heap){    
     free(heap->items);
     heap->size = 0;
 }
@@ -67,32 +67,35 @@ void swapHeap(int * i, int * j){
     *j = temp;
 }
 
+void upHeap(struct Heap * heap, int index){
+    int parentIndex = heapParent(index);
+
+    if(parentIndex < 0) return;
+    
+    if(heap->items[index]< heap->items[parentIndex]){
+        swapHeap(&heap->items[index], &heap->items[parentIndex]);
+        upHeap(heap, parentIndex);
+    }
+}
+
 void insertMin(struct Heap * heap, int value){
     if(isInvalidValue(value)){
         fprintf(stderr, "Value out of range.\n");
         return;
     }
     // need to resize
-    if((heap->size + 1) == heap->capacity){
+    if(heap->size >= heap->capacity){
         if(doubleCapacityHeap(heap) == HEAP_ERROR) return;
     }
 
     heap->items[heap->size++] = value;
 
-    int currentIndex= heap->size - 1;
-    int parentIndex = heapParent(currentIndex);
-    
-    while(currentIndex > 0 && heap->items[parentIndex] > heap->items[currentIndex]){
-        swapHeap(&heap->items[parentIndex], &heap->items[currentIndex]);
-        currentIndex = parentIndex;
-        parentIndex = heapParent(parentIndex);
-    }
-   
+    upHeap(heap, heap->size - 1);
 }
 
 int extractMin(struct Heap * heap) {
     if (heap->size == 0) {
-        return -1;
+        return INT_MIN;
     }
 
     int minValue = heap->items[0];
@@ -103,32 +106,29 @@ int extractMin(struct Heap * heap) {
     }
 
     swapHeap(&heap->items[0], &heap->items[--heap->size]);
+    downHeap(heap, 0);
+    
+    return minValue;
+}
 
-    int currentIndex = 0;
-    int heapSize = heap->size;
-    int leftChildIndex, rightChildIndex, smallestIndex;
+void downHeap(struct Heap * heap, int parentIndex){
+    int heapSize = heap->size;    
+    int leftChildIndex = heapLChild(parentIndex);
+    int rightChildIndex = heapRChild(parentIndex);
+    int smallestIndex = parentIndex;
 
-    while (currentIndex < heapSize) {
-        leftChildIndex = heapLChild(currentIndex);
-        rightChildIndex = heapRChild(currentIndex);
-        smallestIndex = currentIndex;
-
-        if (leftChildIndex < heapSize && heap->items[leftChildIndex] < heap->items[smallestIndex]) {
-            smallestIndex = leftChildIndex;
-        }
-
-        if (rightChildIndex < heapSize && heap->items[rightChildIndex] < heap->items[smallestIndex]) {
-            smallestIndex = rightChildIndex;
-        }
-
-        if (smallestIndex != currentIndex) {
-            swapHeap(&heap->items[currentIndex], &heap->items[smallestIndex]);
-            currentIndex = smallestIndex;
-        } else {
-            break;
-        }
+    if (leftChildIndex < heapSize && heap->items[leftChildIndex] < heap->items[smallestIndex]) {
+        smallestIndex = leftChildIndex;
     }
 
-    return minValue;
+    if (rightChildIndex < heapSize && heap->items[rightChildIndex] < heap->items[smallestIndex]) {
+        smallestIndex = rightChildIndex;
+    }
+
+    if (smallestIndex != parentIndex) {
+        swapHeap(&heap->items[parentIndex], &heap->items[smallestIndex]);
+        downHeap(heap, smallestIndex);
+    }
+    
 }
 

@@ -29,7 +29,7 @@ void initializeHeap(struct Heap *, int);
 */
 int doubleCapacityHeap(struct Heap *);
 
-void freeHeap(struct Heap *, int);
+void freeHeap(struct Heap *);
 
 /*
     returns the ith index
@@ -39,6 +39,9 @@ int heapRChild(int);
 int heapLChild(int);
 
 void swapHeap(int *, int *);
+
+void upHeap(struct Heap *, int);
+void downHeap(struct Heap *, int);
 
 void insertMin(struct Heap *, int);
 int extractMin(struct Heap *);
