@@ -5,15 +5,18 @@ class MaxHeap:
         else:
             self.items = items
             self.max_heapify()
-            
+    
+    def get_len_items(self):
+        return len(self.items)
+
     def max_heapify(self):
-        last_parent_i = (len(self.items)//2) - 1
+        last_parent_i = (self.get_len_items()//2) - 1
 
         for i in range(last_parent_i, -1, -1):
             self.down_heap(i)
 
     def is_empty(self):
-        return len(self.items) == 0
+        return self.get_len_items() == 0
     
     def get_parent(self, i):
         return (i-1)//2
@@ -39,7 +42,7 @@ class MaxHeap:
         right_i = self.get_right_child(parent_i)
         biggest_i = parent_i
 
-        len_items = len(self.items)
+        len_items = self.get_len_items()
 
         if left_i < len_items and self.items[left_i] > self.items[biggest_i]:
             biggest_i = left_i
@@ -49,7 +52,8 @@ class MaxHeap:
             self.items[parent_i], self.items[biggest_i] = self.items[biggest_i], self.items[parent_i]
             self.down_heap(biggest_i)     
             
-        
+    def clear(self):
+        self.items.clear()
     
     def extract_max(self):
         if self.is_empty():
@@ -57,7 +61,8 @@ class MaxHeap:
         
         max_value = self.items[0]
         # Swap last and first element
-        self.items[0], self.items[len(self.items)-1] = self.items[len(self.items)-1], self.items[0]
+        len_items = self.get_len_items()
+        self.items[0], self.items[len_items-1] = self.items[len_items-1], self.items[0]
 
         self.items.pop()
         self.down_heap(0)
@@ -70,7 +75,7 @@ class MaxHeap:
     
     def insert(self, value):
         self.items.append(value)
-        self.up_heap(len(self.items)-1)
+        self.up_heap(self.get_len_items()-1)
     
     def __repr__(self):
         return f"MaxHeap({self.items})"
@@ -79,5 +84,9 @@ class MaxHeap:
 if __name__ == "__main__":
     max_heap = MaxHeap([1,2,40,1203,123,2,0,1,-1,34,5])
     print(max_heap)
+    print(max_heap.extract_max())
+    max_heap.clear()
+    print(max_heap)
+
 
 
