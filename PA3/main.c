@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #define DEFAULT_LOAD_FACTOR 0.75
 #define BUFSIZE 256
@@ -21,23 +20,35 @@ typedef struct HashTable{
     int size;
 }HashTable;
 
-float getLoadFactor(HashTable * hashTable){
-    return hashTable->size / hashTable->capacity;
+void initializeBuckets(LinkedList ** buckets, int capacity){
+    for (int i = 0; i < capacity; i++) {
+        buckets[i] = (LinkedList *)malloc(sizeof(LinkedList));
+        if (buckets[i] == NULL) {
+            printf("Unable to initialize bucket %d.\n", i);
+            return;
+        }
+        buckets[i]->head = NULL; // Make sure the bucket is initialized properly
+    }
 }
 
-int getHashKey(HashTable *hashTable, char *s) {
-    int n = strlen(s);
-    unsigned long hash = 0;
+float getLoadFactor(HashTable * hashTable){
+    return (float)hashTable->size / hashTable->capacity;
+}
 
-    for (int i = 0; i < n; i++) {
-        unsigned long power = 1;
-        for (int j = 0; j < n - i - 1; j++) {
-            power *= 31;
-        }
-        hash += s[i] * power;
+int getHash(char *s) {
+    //DJB2 hash function
+    unsigned long hash = 5381;
+    char c;
+    while((c = *s++)){
+        hash = ((hash << 5) + hash) + c;
     }
 
-    return hash % hashTable->capacity;
+    // Change msb to a 0 in case of overflow
+    return (hash & 0x7fffffff);
+}
+
+int getHashKey(char * s, int capacity){
+    return getHash(s) % capacity;
 }
 
 void initializeHashTable(HashTable *hashTable, int capacity) {
@@ -50,20 +61,12 @@ void initializeHashTable(HashTable *hashTable, int capacity) {
     hashTable->size = 0;
 
     hashTable->buckets = (LinkedList **)malloc(sizeof(LinkedList *) * capacity);
-
     if (hashTable->buckets == NULL) {
         printf("Unable to initialize hashtable buckets.\n");
         return;
     }
 
-    for (int i = 0; i < capacity; i++) {
-        hashTable->buckets[i] = (LinkedList *)malloc(sizeof(LinkedList));
-        if (hashTable->buckets[i] == NULL) {
-            printf("Unable to initialize bucket %d.\n", i);
-            return;
-        }
-        hashTable->buckets[i]->head = NULL;
-    }
+    initializeBuckets(hashTable->buckets, capacity);
 }
 
 void freeHashTable(HashTable *hashTable) {
@@ -111,8 +114,43 @@ Node * createNode(char *key) {
     return node;
 }
 
-void resizeHashTable(HashTable * hashTable){
-    
+void resizeHashTable(HashTable *hashTable) {
+    int newCapacity = hashTable->capacity * 2;
+    LinkedList **newBuckets = (LinkedList **)malloc(sizeof(LinkedList *) * newCapacity);
+
+    if (newBuckets == NULL) {
+        printf("Unable to create new buckets for resizing.\n");
+        return;
+    }
+
+    initializeBuckets(newBuckets, newCapacity);
+
+    Node *tempNode, *currentNode;
+
+    // Rehash buckets
+    for (int i = 0; i < hashTable->capacity; i++) {
+        LinkedList *currentBucket = hashTable->buckets[i];
+        currentNode = currentBucket->head;
+
+        while (currentNode != NULL) {
+            int hashKey = getHashKey(currentNode->key, newCapacity);
+
+            Node *nodeCopy = createNode(currentNode->key);
+            nodeCopy->next = newBuckets[hashKey]->head;
+            newBuckets[hashKey]->head = nodeCopy;
+
+            tempNode = currentNode;
+            currentNode = currentNode->next;
+            free(tempNode->key);
+            free(tempNode);
+        }
+
+        free(currentBucket);
+    }
+
+    free(hashTable->buckets);
+    hashTable->capacity = newCapacity;
+    hashTable->buckets = newBuckets;
 }
 
 void insertHashTable(HashTable * hashTable, char * key){
@@ -121,8 +159,8 @@ void insertHashTable(HashTable * hashTable, char * key){
         return;
     }
     
-    if(getLoadFactor(&hashTable) > DEFAULT_LOAD_FACTOR){
-
+    if(getLoadFactor(hashTable) > DEFAULT_LOAD_FACTOR){
+        resizeHashTable(hashTable);
     }
 
     Node * node = createNode(key);
@@ -131,27 +169,40 @@ void insertHashTable(HashTable * hashTable, char * key){
         printf("Unable to create node. Insertion failed.\n");
         return;
     }
- 
-    LinkedList * bucket = hashTable->buckets[getHashKey(hashTable, key)];
-    Node * head = bucket->head;
 
-    // Empty linked list
-    if(head == NULL){
-        bucket->head = node;
-        return;
-    }
+    LinkedList * bucket = hashTable->buckets[getHashKey(key, hashTable->capacity)];
 
     node->next = bucket->head;
     bucket->head = node;
-
     hashTable->size++;
 }
 
-int main(int argc, char **argv)
-{
-	HashTable ht;
+Node * searchHashTable(HashTable * hashTable, char * key){
+    if(hashTable == NULL){
+        printf("Cannot search null hashtable.\n");
+        return NULL;
+    }
+
+    int hashKey = getHashKey(key, hashTable->capacity);
+
+    LinkedList * bucket = hashTable->buckets[hashKey];
+    Node * head = bucket->head;
+
+    while(head != NULL){
+        if(strcmp(head->key, key) == 0){
+            return head;
+        }
+        head = head->next;
+    }
+
+    return NULL;
+}
+
+
+int main(int argc, char **argv) {
+    HashTable ht;
     initializeHashTable(&ht, 16);
-    insertHashTable(&ht, "foo");
+    
     freeHashTable(&ht);
-	return 0;
+    return 0;
 }
