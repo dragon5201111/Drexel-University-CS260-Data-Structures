@@ -20,9 +20,9 @@ typedef struct HashTable{
     int size;
 }HashTable;
 
-void initializeBuckets(LinkedList ** buckets, int capacity){
+void _initializeBuckets(LinkedList ** buckets, int capacity){
     for (int i = 0; i < capacity; i++) {
-        buckets[i] = (LinkedList *)calloc(1, sizeof(LinkedList));
+        buckets[i] = (LinkedList *)malloc(sizeof(LinkedList));
         if (buckets[i] == NULL) {
             printf("Unable to initialize bucket %d.\n", i);
             return;
@@ -31,12 +31,11 @@ void initializeBuckets(LinkedList ** buckets, int capacity){
     }
 }
 
-float getLoadFactor(HashTable * hashTable){
-    if(hashTable->capacity == 0) return 0.0f;
+float _getLoadFactor(HashTable * hashTable){
     return (float)hashTable->size / hashTable->capacity;
 }
 
-int getHash(char *s) {
+int _getHash(char *s) {
     //DJB2 hash function
     unsigned long hash = 5381;
     char c;
@@ -49,7 +48,7 @@ int getHash(char *s) {
 }
 
 int getHashKey(char * s, int capacity){
-    return getHash(s) % capacity;
+    return _getHash(s) % capacity;
 }
 
 void initializeHashTable(HashTable *hashTable, int capacity) {
@@ -67,7 +66,7 @@ void initializeHashTable(HashTable *hashTable, int capacity) {
         return;
     }
 
-    initializeBuckets(hashTable->buckets, capacity);
+    _initializeBuckets(hashTable->buckets, capacity);
 }
 
 void freeHashTable(HashTable *hashTable) {
@@ -93,7 +92,7 @@ void freeHashTable(HashTable *hashTable) {
     free(hashTable->buckets);
 }
 
-Node * createNode(char *key) {
+Node * _createNode(char *key) {
     Node *node = (Node *) malloc(sizeof(Node));
     if (node == NULL) {
         printf("Unable to initialize node for key: %s\n", key);
@@ -115,7 +114,7 @@ Node * createNode(char *key) {
     return node;
 }
 
-void resizeHashTable(HashTable *hashTable) {
+void _resizeHashTable(HashTable *hashTable) {
     int newCapacity = hashTable->capacity * 2;
     LinkedList **newBuckets = (LinkedList **)malloc(sizeof(LinkedList *) * newCapacity);
 
@@ -124,7 +123,7 @@ void resizeHashTable(HashTable *hashTable) {
         return;
     }
 
-    initializeBuckets(newBuckets, newCapacity);
+    _initializeBuckets(newBuckets, newCapacity);
 
     Node *tempNode, *currentNode;
 
@@ -136,7 +135,7 @@ void resizeHashTable(HashTable *hashTable) {
         while (currentNode != NULL) {
             int hashKey = getHashKey(currentNode->key, newCapacity);
 
-            Node *nodeCopy = createNode(currentNode->key);
+            Node *nodeCopy = _createNode(currentNode->key);
             nodeCopy->next = newBuckets[hashKey]->head;
             newBuckets[hashKey]->head = nodeCopy;
 
@@ -160,11 +159,11 @@ void insertHashTable(HashTable * hashTable, char * key){
         return;
     }
     
-    if(getLoadFactor(hashTable) > DEFAULT_LOAD_FACTOR){
-        resizeHashTable(hashTable);
+    if(_getLoadFactor(hashTable) > DEFAULT_LOAD_FACTOR){
+        _resizeHashTable(hashTable);
     }
 
-    Node * node = createNode(key);
+    Node * node = _createNode(key);
 
     if(node == NULL){
         printf("Unable to create node. Insertion failed.\n");
@@ -199,7 +198,6 @@ Node * searchHashTable(HashTable * hashTable, char * key){
     return NULL;
 }
 
-
 int main(int argc, char **argv)
 {
 	char *dictionaryFilePath = argv[1]; //this keeps the path to the dictionary file file
@@ -207,11 +205,7 @@ int main(int argc, char **argv)
 	char *check = argv[3]; // this keeps the flag to whether we should insert mistyped words into dictionary or ignore
 	int numOfWords=0; //this variable will tell us how much memory to allocate
 
-	int insertToDictionary;
-	if(strcmp(check,"add")==0)
-		insertToDictionary = 1;
-	else
-		insertToDictionary = 0;
+	int insertToDictionary = strcmp(check,"add")==0 ? 1 : 0;
     
 	////////////////////////////////////////////////////////////////////
 	//read dictionary file
@@ -237,7 +231,9 @@ int main(int argc, char **argv)
     //printf("%d\n",numOfWords);
     
     //HINT: You can initialize your hash table here, since you know the size of the dictionary
-    
+    HashTable hashTable;
+    initializeHashTable(&hashTable, numOfWords);
+
     //rewind file pointer to the beginning of the file, to be able to read it line by line.
     fseek(fp, 0, SEEK_SET);
 
@@ -246,8 +242,7 @@ int main(int argc, char **argv)
     {
         fscanf(fp, "%s \n", wrd);
         //You can print the words for Debug purposes, just to make sure you are loading the dictionary as intended
-        //printf("%d: %s\n",i,wrd);
-        
+        insertHashTable(&hashTable, wrd);        
         //HINT: here is a good place to insert the words into your hash table
     }
     fclose(fp);
@@ -305,6 +300,7 @@ int main(int argc, char **argv)
     
 
     // DON'T FORGET to free the memory that you allocated
-    
+    freeHashTable(&hashTable);
+    free(line);
 	return 0;
 }
