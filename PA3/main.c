@@ -4,6 +4,9 @@
 
 #define DEFAULT_LOAD_FACTOR 0.75
 #define BUFSIZE 256
+#define CHARSET_L_BEGIN 65
+#define CHARSET_L_END 90
+#define CHARSET_OFFSET 32
 
 typedef struct Node{
     struct Node * next;
@@ -172,6 +175,18 @@ void insertHashTable(HashTable * hashTable, char * key){
 
     LinkedList * bucket = hashTable->buckets[getHashKey(key, hashTable->capacity)];
 
+    // Check to see if key already exists, if so, free node and return
+    Node * head = bucket->head;
+
+    while(head != NULL){
+        if(strcmp(head->key, key) == 0){
+            free(node->key);
+            free(node);
+            return;
+        }
+        head = head->next;
+    }
+
     node->next = bucket->head;
     bucket->head = node;
     hashTable->size++;
@@ -196,6 +211,85 @@ Node * searchHashTable(HashTable * hashTable, char * key){
     }
 
     return NULL;
+}
+
+void printInvertedAdjacentLetters(HashTable * hashTable, char *key){
+    if(hashTable == NULL || key == NULL){
+        printf("Cannot print null hashtable or key.\n");
+        return;
+    }
+}
+
+void printExtraBeginEnd(HashTable * hashTable, char * key){
+    if(hashTable == NULL || key == NULL){
+        printf("Cannot print null hashtable or key.\n");
+        return;
+    }
+    // strlen(key) + 3 because 2 for letter in front at end and null terminator
+    int keyLen = strlen(key);
+    char * keyCopy = (char * ) malloc((keyLen + 3) * sizeof(char));
+
+    strcpy((keyCopy + 1), key);
+
+
+    if(keyCopy == NULL){
+        printf("Unable to allocate for keyCopy.\n");
+        return;
+    }
+
+    for(int i = CHARSET_L_BEGIN; i <= CHARSET_L_END; i++){
+        // Replace null terminator
+        keyCopy[1 + keyLen] = i;
+        keyCopy[2 + keyLen] = '\0';
+
+        // search on -> keyCopy + 1
+        if(searchHashTable(hashTable, keyCopy + 1) != NULL) printf("%s ", keyCopy + 1);
+        keyCopy[1 + keyLen] = i + CHARSET_OFFSET;
+
+        // search on -> keyCopy + 1 
+        if(searchHashTable(hashTable, keyCopy + 1) != NULL) printf("%s ", keyCopy + 1);
+
+        //Move null terminator back
+        keyCopy[1 + keyLen] = '\0';
+        keyCopy[0] = i;
+        // search on -> keyCopy
+        if(searchHashTable(hashTable, keyCopy) != NULL) printf("%s ", keyCopy);
+
+        keyCopy[0] = i + CHARSET_OFFSET;
+
+        // search on -> keyCopy
+        if(searchHashTable(hashTable, keyCopy) != NULL) printf("%s ", keyCopy);
+    }
+
+    free(keyCopy);
+}
+
+void printMissingBeginEnd(HashTable * hashTable, char * key){
+    if(hashTable == NULL || key == NULL){
+        printf("Cannot print null hashtable or key.\n");
+        return;
+    }
+
+    // Check missing beginning
+    if(searchHashTable(hashTable, key + 1) != NULL) printf("%s ", key + 1);
+    
+    // Check missing end
+    char * tempKey = strdup(key);
+    tempKey[strlen(key) - 1] = '\0';
+
+    if(searchHashTable(hashTable, tempKey) != NULL) printf("%s ", tempKey);
+
+    free(tempKey);
+}
+
+void printSuggestions(HashTable * hashTable, char * key)
+{
+    printf("Suggestions: ");
+    // Call sub-routines
+    printInvertedAdjacentLetters(hashTable, key);
+    printExtraBeginEnd(hashTable, key);
+    printMissingBeginEnd(hashTable, key);
+    printf("\n");
 }
 
 int main(int argc, char **argv)
@@ -273,21 +367,19 @@ int main(int argc, char **argv)
 		
 		//read the line word by word
 		while(word!=NULL)
-		{
-            // You can print the words of the inpit file for Debug purposes, just to make sure you are loading the input text as intended
-			//printf("%s\n",word);
+		{   
+            Node * queryWord;
+            
+            // Misspelled word
+            if((queryWord = searchHashTable(&hashTable, word)) == NULL){
+                printf("Misspelled word: %s\n", word);
+                // Add flag was set
+                if(insertToDictionary) insertHashTable(&hashTable, word);
+                printSuggestions(&hashTable, word);
 
-            
-            // HINT: Since this nested while loop will keep reading the input text word by word, here is a good place to check for misspelled words
-            
-            
-            // INPUT/OUTPUT SPECS: use the following line for printing a "word" that is misspelled.
-            //printf("Misspelled word: %s\n",word);
-            
-            // INPUT/OUTPUT SPECS: use the following line for printing suggestions, each of which will be separated by a comma and whitespace.
-            //printf("Suggestions: "); //the suggested words should follow
-            
-            
+                // Typo found
+                noTypo = 0;
+            }
             
 			word = strtok(NULL,delimiter); 
 		}

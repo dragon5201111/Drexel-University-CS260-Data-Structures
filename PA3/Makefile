@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall
 WORDS_FILE = words.txt
 TEST_FILE = test.txt
-ADD = add
+ADD = ignore
 
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
@@ -24,5 +24,8 @@ run: $(TARGET)
 runVal: $(TARGET)
 	valgrind --tool=memcheck --leak-check=yes ./$(TARGET) $(WORDS_FILE) $(TEST_FILE) $(ADD)
 
-.PHONY: run runVal clean
+runSol: check
+	./$< $(WORDS_FILE) $(TEST_FILE) $(ADD)
+	
+.PHONY: run runVal clean runSol runBoth
 
