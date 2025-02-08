@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall
 WORDS_FILE = words.txt
 TEST_FILE = test.txt
-ADD = ignore
+ADD = add
 
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)

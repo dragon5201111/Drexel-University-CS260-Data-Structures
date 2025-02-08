@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEFAULT_LOAD_FACTOR 0.75
+#define DEFAULT_LOAD_FACTOR 0.65
 #define BUFSIZE 256
 #define CHARSET_L_BEGIN 65
 #define CHARSET_L_END 90
@@ -22,6 +22,12 @@ typedef struct HashTable{
     int capacity;
     int size;
 }HashTable;
+
+void swapChar(char * key, int i, int j){
+    char temp = key[i];
+    key[i] = key[j];
+    key[j] = temp;
+}
 
 void _initializeBuckets(LinkedList ** buckets, int capacity){
     for (int i = 0; i < capacity; i++) {
@@ -162,9 +168,11 @@ void insertHashTable(HashTable * hashTable, char * key){
         return;
     }
     
-    if(_getLoadFactor(hashTable) > DEFAULT_LOAD_FACTOR){
-        _resizeHashTable(hashTable);
-    }
+    
+    // if(_getLoadFactor(hashTable) > DEFAULT_LOAD_FACTOR){
+    //     _resizeHashTable(hashTable);
+    // }
+    
 
     Node * node = _createNode(key);
 
@@ -213,11 +221,28 @@ Node * searchHashTable(HashTable * hashTable, char * key){
     return NULL;
 }
 
-void printInvertedAdjacentLetters(HashTable * hashTable, char *key){
+void printInvertedAdjacentLetters(HashTable *hashTable, char *key){
     if(hashTable == NULL || key == NULL){
         printf("Cannot print null hashtable or key.\n");
         return;
     }
+    
+    char * tempKey = strdup(key);
+
+    if(tempKey == NULL){
+        printf("Unable to allocate memory for temp key.\n");
+        return;
+    }
+
+    int tempKeyLen = strlen(tempKey);
+
+    for(int i = 0; i < tempKeyLen - 1; i++){
+        swapChar(tempKey, i, i+1);
+        if(searchHashTable(hashTable, tempKey)) printf("%s ", tempKey);
+        swapChar(tempKey, i, i+1);
+    }
+
+    free(tempKey);
 }
 
 void printExtraBeginEnd(HashTable * hashTable, char * key){
@@ -275,6 +300,12 @@ void printMissingBeginEnd(HashTable * hashTable, char * key){
     
     // Check missing end
     char * tempKey = strdup(key);
+
+    if(tempKey == NULL){
+        printf("Unable to allocate for temp key.\n");
+        return;
+    }
+
     tempKey[strlen(key) - 1] = '\0';
 
     if(searchHashTable(hashTable, tempKey) != NULL) printf("%s ", tempKey);
@@ -374,9 +405,9 @@ int main(int argc, char **argv)
             if((queryWord = searchHashTable(&hashTable, word)) == NULL){
                 printf("Misspelled word: %s\n", word);
                 // Add flag was set
-                if(insertToDictionary) insertHashTable(&hashTable, word);
                 printSuggestions(&hashTable, word);
 
+                if(insertToDictionary) insertHashTable(&hashTable, word);
                 // Typo found
                 noTypo = 0;
             }
