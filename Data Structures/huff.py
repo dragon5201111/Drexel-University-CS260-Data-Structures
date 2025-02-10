@@ -1,128 +1,138 @@
 import heapq
 
+
 class Node:
-    def __init__(self, freq = 0, char = None):
-        self.freq = freq
+    """Represents a node in the Huffman Tree."""
+    def __init__(self, freq=0, char=None):
+        self.freq = freq 
         self.char = char
         self.left = None
         self.right = None
 
     def __lt__(self, other):
+        """Comparator for priority queue (heap), based on frequency."""
         return self.freq < other.freq
 
     def __repr__(self):
-        return f"Node(freq={self.freq}, char={self.char}, left={repr(self.left)}, right={repr(self.right)})"
-
+        """String representation for debugging."""
+        return f"Node(freq={self.freq}, char={repr(self.char)}, left={repr(self.left)}, right={repr(self.right)})"
 
 
 class NodeHeap:
+    """A Min-Heap data structure for managing nodes."""
     def __init__(self):
         self.nodes = []
-    
-    def insert(self, node : Node):
+
+    def insert(self, node: Node):
+        """Inserts a node into the heap."""
         heapq.heappush(self.nodes, node)
 
-    def extractMin(self):
+    def extract_min(self):
+        """Extracts the node with the smallest frequency."""
         return heapq.heappop(self.nodes)
-    
-    def clearNodes(self):
+
+    def clear(self):
+        """Clears all nodes from the heap."""
         self.nodes.clear()
 
     def __repr__(self):
-        return self.nodes.__repr__()
+        """String representation of the heap."""
+        return repr(self.nodes)
 
     def __len__(self):
+        """Returns the number of nodes in the heap."""
         return len(self.nodes)
-    
+
 
 class HuffmanTree:
-    def __init__(self, nodeHeap = NodeHeap(), characters = None):
+    """Builds and manipulates a Huffman Tree for encoding and decoding text."""
+    def __init__(self, text: str = "", node_heap: NodeHeap = None):
         self.codes = {}
-        self.nodeHeap = nodeHeap
-        self.characters = characters
+        self.node_heap = node_heap or NodeHeap()
+        self.text = text
 
-    def buildHeap(self):
-        if self.characters is None:
-            return
-            
-        self.nodeHeap.clearNodes()
-
-        wordFreq = {c : self.characters.count(c) for c in self.characters}
-
-        for key, value in wordFreq.items():
-            self.nodeHeap.insert(Node(value, key))
-        
-    
-    def buildEncodingTree(self):
-        self.buildHeap()
-
-        while len(self.nodeHeap) > 1:
-            minNodeLeft = self.nodeHeap.extractMin()
-            minNodeRight = self.nodeHeap.extractMin()
-
-            newRoot = Node(minNodeLeft.freq + minNodeRight.freq, char=None)
-            newRoot.right = minNodeLeft
-            newRoot.left = minNodeRight
-
-
-            self.nodeHeap.insert(newRoot)
-        
-        return self.nodeHeap.extractMin()
-
-    def buildEncodingDictionary(self, root : Node, bitString=""):
-        if root is None:
+    def build_heap(self):
+        """Builds the heap from character frequencies in the text."""
+        if not self.text:
             return
         
-        if root.char is not None:
-            self.codes[root.char] = bitString
+        self.node_heap.clear()
+        freq_map = {char: self.text.count(char) for char in set(self.text)}
+
+        for char, freq in freq_map.items():
+            self.node_heap.insert(Node(freq, char))
+
+    def build_tree(self):
+        """Builds the Huffman tree by repeatedly combining the two least frequent nodes."""
+        self.build_heap()
+
+        while len(self.node_heap) > 1:
+            left = self.node_heap.extract_min()
+            right = self.node_heap.extract_min()
+
+            parent = Node(left.freq + right.freq, None)
+            parent.left = left
+            parent.right = right
+
+            self.node_heap.insert(parent)
+
+        return self.node_heap.extract_min()
+
+    def build_encoding_dict(self, node: Node, prefix=""):
+        """Recursively builds the encoding dictionary."""
+        if node is None:
+            return
         
-        self.buildEncodingDictionary(root.left, bitString + '0')
-        self.buildEncodingDictionary(root.right, bitString + '1')
+        if node.char is not None:
+            self.codes[node.char] = prefix
 
-    
-    def setCodes(self):
-        root = self.buildEncodingTree()
-        self.buildEncodingDictionary(root)
-    
-    def getEncodedString(self, text):
-        return "".join([self.codes[char] for char in text])
-    
-    def decodeString(self, root, encodedString):
-        decodedString = ""
-        currentNode = root
+        self.build_encoding_dict(node.left, prefix + '0')
+        self.build_encoding_dict(node.right, prefix + '1')
+
+    def generate_codes(self):
+        """Generates the Huffman codes based on the tree."""
+        root = self.build_tree()
+        self.build_encoding_dict(root)
+
+    def encode(self, text: str) -> str:
+        """Encodes the input text into a Huffman encoded string."""
+        return ''.join(self.codes[char] for char in text)
+
+    def decode(self, root: Node, encoded_string: str) -> str:
+        """Decodes a Huffman encoded string back into the original text."""
+        decoded_string = []
+        current_node = root
         
-        for bit in encodedString:
-            if bit == '0':
-                currentNode = currentNode.left
-            else:
-                currentNode = currentNode.right
+        for bit in encoded_string:
+            current_node = current_node.left if bit == '0' else current_node.right
 
-            if currentNode.char is not None:
-                decodedString += currentNode.char
-                currentNode = root
+            if current_node.char is not None:
+                decoded_string.append(current_node.char)
+                current_node = root
 
-        return decodedString
+        return ''.join(decoded_string)
 
-def writeHuffmanToFile(huffmanTree : HuffmanTree, text="", outFile="compressed.bin"):
-    encodedString = huffmanTree.getEncodedString(text)
 
-    padding = 8 - len(encodedString) % 8
-    encodedString = '0' * padding + encodedString
+def write_huffman_to_file(huffman_tree: HuffmanTree, text: str, out_file="compressed.bin"):
+    """Writes the Huffman encoded text to a binary file."""
+    encoded_string = huffman_tree.encode(text)
+    padding = 8 - len(encoded_string) % 8
+    encoded_string = '0' * padding + encoded_string
 
-    with open(outFile, 'wb') as f:
-        for i in range(0, len(encodedString), 8):
-            byte = encodedString[i:i+8]
-            f.write(bytes([int(byte, 2)]))
+    with open(out_file, 'wb') as file:
+        for i in range(0, len(encoded_string), 8):
+            byte = encoded_string[i:i + 8]
+            file.write(bytes([int(byte, 2)]))
+
 
 if __name__ == "__main__":
-    txt = "this is an example of a huffman tree foo bar"
-    hf = HuffmanTree(characters=txt)
-    root = hf.buildEncodingTree()
-    hf.buildEncodingDictionary(root)
-    encodedString = hf.getEncodedString(txt)
-    print(hf.decodeString(root, encodedString))
-    
+    text = "this is an example of a huffman tree foo bar"
+    huffman_tree = HuffmanTree(text=text)
+    huffman_tree.generate_codes()
 
-    
+    root = huffman_tree.build_tree()
+    encoded_string = huffman_tree.encode(text)
 
-
+    print(f"Encoded: {encoded_string}")
+    decoded_string = huffman_tree.decode(root, encoded_string)
+    print(f"Decoded: {decoded_string}")
