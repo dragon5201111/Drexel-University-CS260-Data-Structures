@@ -51,7 +51,7 @@ class HuffmanTree:
             nodeHeap.insert(Node(value, key))
         
     
-    def buildTree(self, nodeHeap: NodeHeap):
+    def buildEncodingTree(self, nodeHeap: NodeHeap):
         while len(nodeHeap) > 1:
             minNode1 = nodeHeap.extractMin()
             minNode2 = nodeHeap.extractMin()
@@ -63,13 +63,17 @@ class HuffmanTree:
             nodeHeap.insert(newRoot)
         
         return nodeHeap.extractMin()
+    
+    def buildEncodingDictionary(self, node : Node):
+        pass
             
 
 if __name__ == "__main__":
+    txt = "Foo!"
     nh = NodeHeap()
-    hf = HuffmanTree("foo bar is cool")
+    hf = HuffmanTree(txt)
     hf.buildHeap(nh)
-    root = hf.buildTree(nh)
+    root = hf.buildEncodingTree(nh)
     print(root)
     
 
