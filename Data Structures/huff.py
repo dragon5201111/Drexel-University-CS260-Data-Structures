@@ -126,7 +126,7 @@ def write_huffman_to_file(huffman_tree: HuffmanTree, text: str, out_file="compre
 
 
 if __name__ == "__main__":
-    text = "this is an example of a huffman tree foo bar"
+    text = "this is an example"
     huffman_tree = HuffmanTree(text=text)
     huffman_tree.generate_codes()
 
