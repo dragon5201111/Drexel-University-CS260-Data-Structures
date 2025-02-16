@@ -5,6 +5,11 @@
         "random": "cpp",
         "limits.h": "c",
         "stdio.h": "c",
-        "adjacencylist.h": "c"
+        "adjacencylist.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "ranges": "c",
+        "utility": "c"
     }
 }

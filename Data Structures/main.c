@@ -1,20 +1,18 @@
 #include <stdio.h>
 #include "heap.h"
 #include "adjacencyList.h"
+#include "unionFind.h"
 
 int main(void){
-    struct Heap heap;
-    initializeHeap(&heap, 50);
-    insertMin(&heap, 30);
-    insertMin(&heap, 2);
-    insertMin(&heap, 5);
-    insertMin(&heap, 1);
-    insertMin(&heap, 4);
-    extractMin(&heap);
+    UnionFind uf;
+    intializeUF(&uf, 5);
 
-    
-    for(int i = 0; i < heap.size; i++)
-        printf("%d,", heap.items[i]);
-    freeHeap(&heap);
+    printUF(&uf);
+    unionUF(&uf, 0, 1);
+    unionUF(&uf, 3, 4);
+    unionUF(&uf, 0, 3);
+    printUF(&uf);
+    printf("Is of same set %d\n", isOfSameSetUF(&uf, 3, 4));
+    freeUF(&uf);
     return 0;
 }
