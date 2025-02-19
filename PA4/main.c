@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Constants for strcmp
 #define ENCODE "encode"
 #define DECODE "decode"
 
+// Return code constants
 #define ENCODE_SUCCESS 0 // On encoding success
 #define ENCODE_FAILURE -1 // On encoding failure
 #define DECODE_SUCCESS 1 // On decoding success
