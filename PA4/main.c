@@ -23,7 +23,6 @@ typedef struct code{
   char *binaryCode;
 } Code;
 
-
 typedef struct bstNode{
   Code code;
   struct bstNode * left;
@@ -210,7 +209,6 @@ int main(int argc, char **argv)
       codeTableFilePath = argv[3];
       outputFilePath = argv[4];
 
-      /*To read the input text file, you might want to use a code as follows*/
       FILE *inputFile = fopen(inputTextFilePath, "r");
 
       if (inputFile == NULL)
@@ -228,27 +226,20 @@ int main(int argc, char **argv)
 
       int totalNumOfCharacters=0;
       char c;
-      //read the file character by character
+
       while ((c = fgetc(inputFile)) != EOF && c!='\n')
       {
-        //increase the frequency of the character by one
         codeTable[(int)c].freq++;
-        //increase the total character count
         totalNumOfCharacters++;
       }
       fclose(inputFile);
-
-      //now that you have collected the frequency of each character that is present 
-      //in the input file, you need to generate the code table.
+      
       int numOfCharacters = 0;
       for(int i = 0; i < CHAR_MAX; i++){
         if(codeTable[i].freq != 0) numOfCharacters++;
       }
 
-      // Hint: when initializing the heap to be used in the generation of Huffman
-      // 		 tree, keep in mind that you know how many unique characters have
-      //		 appeared in the input text. You can get this number by going through
-      //		 your codeTable...
+
       NodeHeap nodeHeap = {0};
       initNodeHeap(&nodeHeap, numOfCharacters);
 
@@ -267,15 +258,12 @@ int main(int argc, char **argv)
       // {
       //   printf("Code: %c, Freq:%d\n", nodeHeap.nodes[i].code.character, nodeHeap.nodes[i].code.freq);
       // }
-      
       // BSTNode * minNode = extractMinNodeHeap(&nodeHeap);
-
       // printf("\nExtracting Min(s):\n");
       // while(minNode != NULL){
       //   printf("Extracted: %c, %d\n", minNode->code.character, minNode->code.freq);
       //   minNode = extractMinNodeHeap(&nodeHeap);
       // }      
-
       // putchar('\n');
 
       /*----------------------------------------------*/
