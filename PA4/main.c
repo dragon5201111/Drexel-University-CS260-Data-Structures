@@ -15,6 +15,7 @@
 
 // General constants
 #define CHAR_MAX 256
+#define ARG_MIN 5
 
 // a struct to keep frequency and binary code representation of a character
 typedef struct code{
@@ -34,32 +35,37 @@ typedef struct MinHeap{
   struct MinHeapNode ** nodes;
 }MinHeap;
 
-// Function prototypes
-void printUsage();
-void swapMinHeap(MinHeapNode **, MinHeapNode **);
+// Heap prototypes
 MinHeapNode* createNode(char, int);
+MinHeap * buildMinHeap(Code[], int);
 MinHeap * createMinHeap(int);
+MinHeapNode* extractMin(MinHeap*);
 void downHeap(MinHeap*, int);
 int minHeapLChild(int);
 int minHeapRChild(int);
 int minHeapParent(int);
-MinHeapNode* extractMin(MinHeap*);
 void insertMinHeap(MinHeap*,MinHeapNode*); 
 void minHeapify(MinHeap*);
 void freeMinHeap(MinHeap *);
 void freeNode(MinHeapNode *);
+void swapMinHeap(MinHeapNode **, MinHeapNode **);
+
+// Code table prototypes
 int populateCodeTable(char *, Code[]);
-MinHeap * buildMinHeap(Code[], int);
 int codeTableNumCharacters(Code[]);
 
+// Print prototypes
+void _printMinHeap(MinHeap *);
+void printUsage();
 
 int main(int argc, char **argv)
 {
-    if(argc != 5){
+    if(argc != ARG_MIN){
       printUsage();
       return GENERAL_FAILURE;
     }
 
+    /*
     //argv[1] will be "encode" or "decode" signifying the mode of the program
     //for encode mode
         //argv[2] will be the path to input text file
@@ -69,6 +75,7 @@ int main(int argc, char **argv)
         //argv[2] will be the path to input code table file
         //argv[3] will be the path to input encoded text file
         //argv[4] will be the path to output decoded text file
+    */
     char *inputTextFilePath = NULL, *codeTableFilePath = NULL, *outputFilePath = NULL;
 
     if(strcmp(argv[1], ENCODE) == 0){
@@ -91,11 +98,6 @@ int main(int argc, char **argv)
 
       // Build min heap to be built into huffman tree
       MinHeap * minHeap = buildMinHeap(codeTable, numOfCharacters);
-
-  
-
-      
-
 
       // FILE *codeTableFile = fopen(codeTableFilePath, "w");
       // if (codeTableFile == NULL)
@@ -124,7 +126,7 @@ int main(int argc, char **argv)
       /*----------------------------------------------*/
       //to write encoded version of the text in 0/1 form into text file, you can use a code similar to fprintf statment above that is suggested for writing code table to the file.
       
-      
+      // free resources
       freeMinHeap(minHeap);
       return ENCODE_SUCCESS;
     }else if(strcmp(argv[1], DECODE) == 0){
@@ -134,8 +136,13 @@ int main(int argc, char **argv)
       //1) read code table: you can use fscanf() function, since the code table file is well structured. Alternatively, you can also use the read statements from above as was used for reading input text file.
       //2) read encoded text, which is a single line consisting of 0/1 characters: This file is better be read character by character, for which you can use a code similar to getc() code above
       //3) write the decoded text into file: for that, you can write it into the file using a code similar to fprintf() usages exemplified above.
-    
-    
+      
+      printf("IMPLEMENT\n");
+
+      inputTextFilePath = argv[3];
+      codeTableFilePath = argv[2];
+      outputFilePath = argv[4];
+
       return DECODE_SUCCESS;
     }
 
@@ -156,7 +163,7 @@ void _printMinHeap(MinHeap * minHeap){
   printf("\nExtracting nodes by extract min:\n");
   MinHeapNode * minNode;
 
-  while((minNode = extractMin(minheap))){
+  while((minNode = extractMin(minHeap))){
     printf("Character:%c, Frequency:%d\n", minNode->character, minNode->freq);
   }
 }
