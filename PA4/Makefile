@@ -2,8 +2,8 @@ CC = gcc
 CFLAGS = -Wall
 INPUT_FILE = message.txt
 ENCODE_DECODE = encode
-OUTPUT_CODE_TABLE_FILE = test_code_table.txt
-ENCODED_DECODED_FILE = test_enc_dec.txt
+OUTPUT_CODE_TABLE_FILE = ./out/test_code_table.txt
+ENCODED_DECODED_FILE = ./out/test_enc_dec.txt
 
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
