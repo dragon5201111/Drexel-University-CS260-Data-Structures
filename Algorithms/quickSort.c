@@ -3,14 +3,14 @@
 
 void swap(int[], int, int);
 void quickSortHelperN(int[], int, int);
-void quickSortHelperM(int [], int, int);
+void qSortCodeTableH(int [], int, int);
 void quickSortN(int[], int);
-void quickSortM(int[], int);
+void qSortCodeTable(int[], int);
 
 int main(void){
     int arr3[] = {1,7,3,2,5,6,7,8};
     int arrSize3 = sizeof(arr3) / sizeof(arr3[0]);
-    runSortAlgAndPrint(&quickSortM, arr3, arrSize3);
+    runSortAlgAndPrint(&qSortCodeTable, arr3, arrSize3);
 }
 
 
@@ -20,11 +20,11 @@ void quickSortN(int arr[], int arrSize){
 }
 
 //Pivot is middle element
-void quickSortM(int arr[], int arrSize){
-    quickSortHelperM(arr, 0, arrSize);
+void qSortCodeTable(int arr[], int arrSize){
+    qSortCodeTableH(arr, 0, arrSize);
 }
 
-void quickSortHelperM(int arr[], int left, int right) {
+void qSortCodeTableH(int arr[], int left, int right) {
     if (left >= right) return;
 
     int midIndx = (left + right) / 2;
@@ -44,8 +44,8 @@ void quickSortHelperM(int arr[], int left, int right) {
         }
     }
 
-    quickSortHelperM(arr, left, j);
-    quickSortHelperM(arr, i, right);
+    qSortCodeTableH(arr, left, j);
+    qSortCodeTableH(arr, i, right);
 }
 
 

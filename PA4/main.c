@@ -16,9 +16,11 @@
 // General constants
 #define CHAR_MAX 256
 #define ARG_MIN 5
+#define INTERNAL_NODE_CHARACTER '\0'
 
 // a struct to keep frequency and binary code representation of a character
 typedef struct code{
+  char character;
   unsigned int freq;
   char *binaryCode;
 } Code;
@@ -40,6 +42,7 @@ MinHeapNode* createNode(char, int);
 MinHeap * buildMinHeap(Code[], int);
 MinHeap * createMinHeap(int);
 MinHeapNode* extractMin(MinHeap*);
+MinHeapNode* buildHuffmanTree(MinHeap *);
 void downHeap(MinHeap*, int);
 int minHeapLChild(int);
 int minHeapRChild(int);
@@ -49,14 +52,25 @@ void minHeapify(MinHeap*);
 void freeMinHeap(MinHeap *);
 void freeNode(MinHeapNode *);
 void swapMinHeap(MinHeapNode **, MinHeapNode **);
+int generateHuffmanCodes(MinHeapNode *, Code []);
+void generateHuffmanCodesH(MinHeapNode*, char *, int, int*, Code[]);
 
 // Code table prototypes
-int populateCodeTable(char *, Code[]);
+int populateCodeTable(char *, Code[], int);
 int codeTableNumCharacters(Code[]);
+void initializeCodeTable(Code[], int);
+void freeCodeTable(Code[], int);
 
 // Print prototypes
 void _printMinHeap(MinHeap *);
 void printUsage();
+
+// File prototypes
+int writeCharacterCodesToFile(char *, Code[], int);
+
+// MISC prototypes
+void freeResources(MinHeap *, MinHeapNode*, Code[], int);
+
 
 int main(int argc, char **argv)
 {
@@ -88,7 +102,7 @@ int main(int argc, char **argv)
 
       // Populate code table
       Code codeTable[CHAR_MAX];
-      if(populateCodeTable(inputTextFilePath, codeTable) == ENCODE_FAILURE){
+      if(populateCodeTable(inputTextFilePath, codeTable, CHAR_MAX) == ENCODE_FAILURE){
         printf("Could not open file to read: %s\n",inputTextFilePath);
         return ENCODE_FAILURE;
       }
@@ -97,24 +111,37 @@ int main(int argc, char **argv)
       int numOfCharacters = codeTableNumCharacters(codeTable);
 
       // Build min heap to be built into huffman tree
-      MinHeap * minHeap = buildMinHeap(codeTable, numOfCharacters);
+      MinHeap * minHeap = NULL;
+      if((minHeap = buildMinHeap(codeTable, numOfCharacters)) == NULL){
+        printf("Unable to build min heap.\n");
+        return ENCODE_FAILURE;
+      }
 
-      // FILE *codeTableFile = fopen(codeTableFilePath, "w");
-      // if (codeTableFile == NULL)
-      // {
-      //   printf("Could not open file to write: %s\n",codeTableFilePath);
-      //   return ENCODE_FAILURE;
-      // }
+      MinHeapNode * huffmanTree = NULL;
 
-      // // Write the code table into file:
-      // for(int i = numOfCharacters - 1; i >= 0; i--)
-      // {
-      //   // IMPLEMENT THIS LATER
-      //   //fprintf(codeTableFile, "%c\t%s\t%d\n", characters[i], characterCodes[i], characterFrequencies[i]);
-      // }
-      // fclose(codeTableFile);
+      if((huffmanTree = buildHuffmanTree(minHeap)) == NULL){
+        printf("Unable to build huffman tree.\n");
+        freeMinHeap(minHeap);
+        return ENCODE_FAILURE;
+      }
 
+      Code characterCodes[numOfCharacters];
+      initializeCodeTable(characterCodes, numOfCharacters);
 
+      if(generateHuffmanCodes(huffmanTree, characterCodes) == ENCODE_FAILURE){
+        printf("Cannot generate huffman codes.\n");
+        freeResources(minHeap, huffmanTree, characterCodes, numOfCharacters);
+        return ENCODE_FAILURE;
+      }
+
+      // Quicksort before writing to file TODO
+      
+
+      if(writeCharacterCodesToFile(codeTableFilePath, characterCodes, numOfCharacters-1) == ENCODE_FAILURE){
+        printf("Unable to write code table to %s\n", codeTableFilePath);
+        freeResources(minHeap, huffmanTree, characterCodes, numOfCharacters);
+        return ENCODE_FAILURE;
+      }
       // int compressedSize = 0, uncompressed = 0;
 
       // /*----------------------------------------------*/
@@ -125,9 +152,9 @@ int main(int argc, char **argv)
 
       /*----------------------------------------------*/
       //to write encoded version of the text in 0/1 form into text file, you can use a code similar to fprintf statment above that is suggested for writing code table to the file.
-      
+
       // free resources
-      freeMinHeap(minHeap);
+      freeResources(minHeap, huffmanTree, characterCodes, numOfCharacters);
       return ENCODE_SUCCESS;
     }else if(strcmp(argv[1], DECODE) == 0){
       /*----------------DECODER-----------------------*/
@@ -137,12 +164,7 @@ int main(int argc, char **argv)
       //2) read encoded text, which is a single line consisting of 0/1 characters: This file is better be read character by character, for which you can use a code similar to getc() code above
       //3) write the decoded text into file: for that, you can write it into the file using a code similar to fprintf() usages exemplified above.
       
-      printf("IMPLEMENT\n");
-
-      inputTextFilePath = argv[3];
-      codeTableFilePath = argv[2];
-      outputFilePath = argv[4];
-
+      printf("UNIMPLEMENTED\n");
       return DECODE_SUCCESS;
     }
 
@@ -150,6 +172,28 @@ int main(int argc, char **argv)
     return GENERAL_FAILURE;
 }
 
+void freeResources(MinHeap * minHeap, MinHeapNode* huffmanTree, Code codeTable [], int codeTableSize){
+  freeCodeTable(codeTable, codeTableSize);
+  freeNode(huffmanTree);
+  freeMinHeap(minHeap);
+}
+
+int writeCharacterCodesToFile(char * codeTableFilePath, Code characterCodes[], int size){
+  FILE *codeTableFile = fopen(codeTableFilePath, "w");
+  if (codeTableFile == NULL)
+  {
+    printf("Could not open file to write: %s\n",codeTableFilePath);
+    return ENCODE_FAILURE;
+  }
+
+  for(int i = size; i >= 0; i--)
+  { 
+    if(characterCodes[i].binaryCode != NULL)
+      fprintf(codeTableFile, "%c\t%s\t%d\n", characterCodes[i].character, characterCodes[i].binaryCode, characterCodes[i].freq);
+  }
+  fclose(codeTableFile);
+  return ENCODE_SUCCESS;
+}
 
 // For debug purposes
 void _printMinHeap(MinHeap * minHeap){
@@ -183,14 +227,14 @@ int codeTableNumCharacters(Code codeTable[]){
   return numOfCharacters;
 }
 
-int populateCodeTable(char * inputTextFilePath, Code codeTable[]){
+int populateCodeTable(char * inputTextFilePath, Code codeTable[], int size){
   FILE *inputFile = fopen(inputTextFilePath, "r");
 
   if (inputFile == NULL)
     return ENCODE_FAILURE;
 
   // Initialize frequencies to zero
-  for(int i = 0; i < CHAR_MAX; i++){
+  for(int i = 0; i < size; i++){
     codeTable[i].freq = 0;
   }
 
@@ -206,6 +250,79 @@ int populateCodeTable(char * inputTextFilePath, Code codeTable[]){
   fclose(inputFile);
   
   return ENCODE_SUCCESS;
+}
+
+void initializeCodeTable(Code codeTable[], int size){
+  for(int i = 0; i < size; i++){
+    codeTable[i].binaryCode = NULL;
+    codeTable[i].freq = 0;
+  }
+}
+
+void freeCodeTable(Code codeTable[], int size){
+  for(int i = 0; i < size; i++){
+      if(codeTable[i].binaryCode != NULL){
+        free(codeTable[i].binaryCode);
+      }
+  }
+}
+
+int generateHuffmanCodes(MinHeapNode* root, Code characterCodes[]) {
+  if (root == NULL) {
+      return ENCODE_FAILURE;
+  }
+
+  char code[CHAR_MAX];
+  int index = 0;
+  generateHuffmanCodesH(root, code, 0, &index, characterCodes);
+  return ENCODE_SUCCESS;
+}
+
+void generateHuffmanCodesH(MinHeapNode* node, char * code, int level, int *i, Code characterCodes[]) {
+  if (node == NULL) return;
+
+  if (node->character != INTERNAL_NODE_CHARACTER) {
+      code[level] = '\0';
+      characterCodes[*i].character = node->character;
+      characterCodes[*i].freq = node->freq;
+      characterCodes[*i].binaryCode = strdup(code); // Store the code in the codeTable
+      (*i)++; // Increment the index after storing a code
+  }
+
+  code[level] = '0';
+  generateHuffmanCodesH(node->left, code, level + 1, i, characterCodes);
+  code[level] = '1';
+  generateHuffmanCodesH(node->right, code, level + 1, i, characterCodes);
+}
+
+
+MinHeapNode* buildHuffmanTree(MinHeap * minHeap){
+  if(minHeap == NULL || minHeap->size <= 0){
+    printf("Empty minheap, cannot build huffman tree.\n");
+    return NULL;
+  }
+
+  MinHeapNode * leftNode, *rightNode, *newNode;
+
+  while (minHeap->size > 1) {
+    leftNode = extractMin(minHeap);
+    rightNode = extractMin(minHeap);
+
+    if (leftNode == NULL || rightNode == NULL) {
+      printf("Error: Failed to extract nodes from the heap.\n");
+      return NULL;
+    }
+
+    newNode = createNode(INTERNAL_NODE_CHARACTER, leftNode->freq + rightNode->freq);
+    if (newNode == NULL) return NULL;
+
+    newNode->left = leftNode;
+    newNode->right = rightNode;
+
+    insertMinHeap(minHeap, newNode);
+  }
+
+  return extractMin(minHeap);
 }
 
 MinHeap * createMinHeap(int capacity){
@@ -243,7 +360,8 @@ MinHeapNode* createNode(char character, int freq){
       return NULL;
     }
 
-    temp->left = temp->right = NULL; 
+    temp->left = NULL;
+    temp->right = NULL;
     temp->character = character; 
     temp->freq = freq;
     return temp; 
@@ -292,20 +410,15 @@ MinHeapNode* extractMin(MinHeap* minHeap){
 } 
 
 void insertMinHeap(MinHeap* minHeap, MinHeapNode* minHeapNode){ 
-    if(minHeap == NULL || minHeapNode == NULL){
-      fprintf(stderr, "Cannot insert to null heap or null node.\n");
-      return;
-    }
-  
-    ++minHeap->size; 
-    int i = minHeap->size - 1; 
-    
-    while (i && minHeapNode->freq < minHeap->nodes[minHeapParent(i)]->freq) { 
-        minHeap->nodes[i] = minHeap->nodes[minHeapParent(i)]; 
-        i = minHeapParent(i); 
-    } 
-  
-    minHeap->nodes[i] = minHeapNode; 
+  ++minHeap->size; 
+  int i = minHeap->size - 1; 
+
+  while (i && minHeapNode->freq < minHeap->nodes[minHeapParent(i)]->freq) { 
+      swapMinHeap(&minHeap->nodes[i], &minHeap->nodes[minHeapParent(i)]); 
+      i = minHeapParent(i); 
+  } 
+
+  swapMinHeap(&minHeap->nodes[i], &minHeapNode);  
 } 
 
 void minHeapify(MinHeap* minHeap){
@@ -321,30 +434,32 @@ void minHeapify(MinHeap* minHeap){
         downHeap(minHeap, i); 
 } 
 
-void freeNode(MinHeapNode * minHeapNode){
-  if(minHeapNode == NULL) return;
-
-  freeNode(minHeapNode->left);
-  freeNode(minHeapNode->right);
-
-  free(minHeapNode);
-}
-
-void freeMinHeap(MinHeap * minHeap){
-  if(minHeap == NULL){
+void freeMinHeap(MinHeap *minHeap) {
+  if (minHeap == NULL) {
     return;
-  }
-
-  for(int i = 0; i < minHeap->capacity; i++){
-    freeNode(minHeap->nodes[i]);
   }
 
   free(minHeap->nodes);
   free(minHeap);
 }
 
+void freeNode(MinHeapNode *node) {
+  if (node == NULL) {
+    return;
+  }
+
+  freeNode(node->left);
+  freeNode(node->right);
+
+  free(node);
+}
+
 MinHeap * buildMinHeap(Code codeTable[], int numOfCharacters){
-  MinHeap * minHeap = createMinHeap(numOfCharacters);
+  MinHeap * minHeap;
+
+  if((minHeap = createMinHeap(numOfCharacters)) == NULL){
+    return NULL;
+  }
 
   int minHeapSize = 0;
   for (int i = 0; i < CHAR_MAX; i++)
@@ -354,6 +469,7 @@ MinHeap * buildMinHeap(Code codeTable[], int numOfCharacters){
       if((minHeap->nodes[minHeapSize++] = createNode(i, codeTable[i].freq)) == NULL){
         printf("Unable to create node for min heap.\n");
         freeMinHeap(minHeap);
+        return NULL;
       }
     }
   }
