@@ -1,10 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -g
-INPUT_FILE = seashells.txt
+INPUT_FILE = message.txt
 ENCODE_DECODE = encode
 OUTPUT_CODE_TABLE_FILE = ./out/test_code_table.txt
-OUTPUT_CODE_TABLE_FILE_S = ./out/test_code_table_s.txt
+OUTPUT_CODE_TABLE_FILE_SOLUTION = ./out/test_code_table_solution.txt
 ENCODED_DECODED_FILE = ./out/test_enc_dec.txt
+ENCODED_DECODED_FILE_SOLUTIUON = ./out/test_enc_dec_solution.txt
+
 
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
@@ -26,7 +28,7 @@ run: $(TARGET)
 
 	
 runSol:
-	./$(SOL) $(ENCODE_DECODE) $(INPUT_FILE) $(OUTPUT_CODE_TABLE_FILE_S) $(ENCODED_DECODED_FILE)
+	./$(SOL) $(ENCODE_DECODE) $(INPUT_FILE) $(OUTPUT_CODE_TABLE_FILE_SOLUTION) $(ENCODED_DECODED_FILE_SOLUTIUON)
 
 valgrind: $(TARGET)
 	valgrind --tool=memcheck --leak-check=yes ./$(TARGET) $(ENCODE_DECODE) $(INPUT_FILE) $(OUTPUT_CODE_TABLE_FILE) $(ENCODED_DECODED_FILE)
