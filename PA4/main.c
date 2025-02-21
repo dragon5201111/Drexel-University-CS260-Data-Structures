@@ -38,6 +38,7 @@ void printUsage();
 int countFrequencies(char *, int[], int);
 // Tree functions
 TreeNode * createTreeNode(char, int);
+TreeNode * extractMin(MinHeap *);
 // Heap functions
 int initializeMinHeap(MinHeap *, int);
 int deallocMinHeap(MinHeap *);
@@ -77,6 +78,7 @@ int main(int argc, char ** argv){
             return INIT_FAILURE;
         }
 
+        // Deallocate min heap
         if(deallocMinHeap(&minHeap) == GENERAL_FAILURE){
             printf("Unable to deallocate min heap.\n");
             return GENERAL_FAILURE;
@@ -164,21 +166,19 @@ int getRightChild(int i){
 int insertMinHeap(MinHeap * minHeap, TreeNode * treeNode){
     if(minHeap == NULL || treeNode == NULL || minHeap->size == minHeap->capacity) return GENERAL_FAILURE;
 
-    minHeap->nodes[minHeap->size] = treeNode;
-    upHeap(minHeap, minHeap->size);
-    minHeap->size++;
-
+    minHeap->nodes[minHeap->size++] = treeNode;
+    upHeap(minHeap, minHeap->size-1);
     return OK;
 }
 
 void swapHeap(MinHeap * minHeap, int i, int j){
-    TreeNode temp = *minHeap->nodes[i];
-    *minHeap->nodes[i] = *minHeap->nodes[j];
-    *minHeap->nodes[j] = temp;
+    TreeNode * tempTreeNode = minHeap->nodes[i];
+    minHeap->nodes[i] = minHeap->nodes[j];
+    minHeap->nodes[j] = tempTreeNode;
 }
 
 void upHeap(MinHeap * minHeap, int i){
-    int parentI = (i - 1)/2;
+    int parentI = getParent(i);
     if(parentI < 0) return;
     
     if(minHeap->nodes[i]->frequency < minHeap->nodes[parentI]->frequency){
@@ -204,7 +204,7 @@ void downHeap(MinHeap * minHeap, int i){
     }
 }
 
-// Returns TreeNode * on success, on fail, returns NULL
+// Returns: TreeNode * on success, on fail, returns NULL
 TreeNode * createTreeNode(char character, int frequency){
     TreeNode * newNode = (TreeNode *) malloc(sizeof(TreeNode));
     if(newNode == NULL) return NULL;
@@ -212,4 +212,23 @@ TreeNode * createTreeNode(char character, int frequency){
     newNode->frequency = frequency;
     newNode->left = newNode->right = NULL;
     return newNode;
+}
+
+// Returns: TreeNode * on success, on fail, returns NULL 
+TreeNode * extractMin(MinHeap * minHeap){
+    if(minHeap == NULL || minHeap->size == 0) return NULL;
+
+    TreeNode * minTreeNode = minHeap->nodes[0];
+
+    // Don't bother downheaping for one node
+    if(minHeap->size == 1){
+        minHeap->size--;
+        return minTreeNode;
+    }
+
+    swapHeap(minHeap, 0, minHeap->size - 1);
+    minHeap->size--;
+    // Restore heap property
+    downHeap(minHeap, 0);
+    return minTreeNode;
 }
