@@ -21,7 +21,8 @@ $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	-rm -f $(TARGET) $(OBJ)
+	-rm -rf $(TARGET) $(OBJ)
+	-rm -rf ./out/*
 
 run: $(TARGET)
 	./$(TARGET) $(ENCODE_DECODE) $(INPUT_FILE) $(OUTPUT_CODE_TABLE_FILE) $(ENCODED_DECODED_FILE)

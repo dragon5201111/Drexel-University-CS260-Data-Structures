@@ -19,6 +19,7 @@
 // MISC
 #define CHAR_MAX 255
 #define FREQUENCY_DEFAULT 0
+#define INTERNAL_CHARACTER '\0'
 
 //==========Structures==========
 typedef struct TreeNode{
@@ -37,9 +38,12 @@ typedef struct MinHeap{
 // General
 void printUsage();
 int countFrequencies(char *, int[], int);
+
 // Tree functions
 TreeNode * createTreeNode(char, int);
 TreeNode * extractMin(MinHeap *);
+TreeNode * buildDecodingTree(MinHeap *);
+void deallocTreeNode(TreeNode *);
 // Heap functions
 int initializeMinHeap(MinHeap *, int);
 int buildMinHeap(MinHeap *, int[], int, int);
@@ -75,7 +79,7 @@ int main(int argc, char ** argv){
 
         // Setup min heap
         MinHeap minHeap;
-        if(initializeMinHeap(&minHeap, numOfCharacters) == INIT_FAILURE){
+        if(initializeMinHeap(&minHeap, CHAR_MAX) == INIT_FAILURE){
             printf("Unable to initialize min heap.\n");
             return INIT_FAILURE;
         }
@@ -85,13 +89,21 @@ int main(int argc, char ** argv){
             deallocMinHeap(&minHeap);
             return BUILD_FAILURE;
         }
-
-        TreeNode * min;
-        while ((min = extractMin(&minHeap))) printf("'%c':%d,%d\n", min->character, min->frequency, minHeap.size);
         
+        // Debug to test extract min
+        //TreeNode * min; while((min = extractMin(&minHeap))) printf("Extracted: '%c':%d\n", min->character, min->frequency);
 
-
-        // Deallocate min heap
+        // Build decoding tree
+        TreeNode * decodingTree;
+        if((decodingTree = buildDecodingTree(&minHeap)) == NULL){
+            printf("Unable to build decoding tree.\n");
+            deallocMinHeap(&minHeap);
+            return BUILD_FAILURE;
+        }
+        
+        // Min heap size is zero so we need to free decoding tree as well
+        // Decoding tree contains reference to all nodes (preassumably)
+        deallocTreeNode(decodingTree);
         deallocMinHeap(&minHeap);
         return ENCODE_SUCCESS;
     }else if(strcmp(argv[1], DECODE) == 0){
@@ -152,21 +164,17 @@ int initializeMinHeap(MinHeap * minHeap, int capacity){
 int buildMinHeap(MinHeap * minHeap, int frequencies[], int numOfCharacters, int frequencySize){
     if(minHeap == NULL || numOfCharacters < 0 || frequencies == NULL) return BUILD_FAILURE;
 
-    int numInserted = 0;
     int frequency = 0;
 
-    for(int i = 0; i < frequencySize && numInserted != numOfCharacters; i++){
+    for(int i = 0; i < frequencySize && minHeap->size != numOfCharacters; i++){
         if((frequency = frequencies[i]) != FREQUENCY_DEFAULT){
             TreeNode * newNode = createTreeNode((char)i, frequency);
             if(newNode == NULL){
                 return BUILD_FAILURE;
             }
-            minHeap->nodes[numInserted++] = newNode;
+            minHeap->nodes[minHeap->size++] = newNode;
         }
     }
-    
-    // Set new size
-    minHeap->size = numInserted;
 
     // Restore heap property, by min heapifying
     for (int i = (minHeap->size - 1) / 2; i >= 0; --i) 
@@ -177,6 +185,11 @@ int buildMinHeap(MinHeap * minHeap, int frequencies[], int numOfCharacters, int 
 // Returns OK on success, GENERAL_FAILURE on failure
 int deallocMinHeap(MinHeap * minHeap){
     if(minHeap == NULL) return GENERAL_FAILURE;
+
+    // Can't use capacity or else seg fault
+    for(int i = 0; i < minHeap->size; i++){
+        deallocTreeNode(minHeap->nodes[i]);
+    }
     free(minHeap->nodes);
     minHeap->size = -1;
     minHeap->capacity = -1;
@@ -267,4 +280,41 @@ TreeNode * extractMin(MinHeap * minHeap){
     // Restore heap property
     downHeap(minHeap, 0);
     return minTreeNode;
+}
+
+// Returns: NULL on failure, otherwise TreeNode *
+TreeNode * buildDecodingTree(MinHeap * minHeap){
+    if(minHeap == NULL) return NULL;
+
+    TreeNode * leftTreeNode, *rightTreeNode, *insertTreeNode;
+    int sizeOfHeap = minHeap->size;
+
+    while(minHeap->size != 1){
+        leftTreeNode = extractMin(minHeap);
+        rightTreeNode = extractMin(minHeap);
+
+        insertTreeNode = createTreeNode(INTERNAL_CHARACTER, leftTreeNode->frequency + rightTreeNode->frequency);
+
+        if(insertTreeNode == NULL){
+            // Heap size is decremented from extractMin so size must be restored to properly free all nodes.
+            minHeap->size = sizeOfHeap;
+            return NULL;
+        }
+
+        insertTreeNode->left = leftTreeNode;
+        insertTreeNode->right = rightTreeNode;
+
+        insertMinHeap(minHeap, insertTreeNode);
+    }
+
+    return extractMin(minHeap);
+}
+
+void deallocTreeNode(TreeNode * treeNode){
+    if(treeNode == NULL) return;
+
+    deallocTreeNode(treeNode->left);
+    deallocTreeNode(treeNode->right);
+
+    free(treeNode);
 }
