@@ -11,6 +11,7 @@
 #define DECODE_SUCCESS 1
 #define FILE_ERROR -2
 #define INIT_FAILURE -3
+#define BUILD_FAILURE -4
 // For Arguments
 #define ARG_MAX 5
 #define ENCODE "encode"
@@ -41,6 +42,7 @@ TreeNode * createTreeNode(char, int);
 TreeNode * extractMin(MinHeap *);
 // Heap functions
 int initializeMinHeap(MinHeap *, int);
+int buildMinHeap(MinHeap *, int[], int, int);
 int deallocMinHeap(MinHeap *);
 int insertMinHeap(MinHeap *, TreeNode *);
 void swapHeap(MinHeap *, int, int);
@@ -78,11 +80,19 @@ int main(int argc, char ** argv){
             return INIT_FAILURE;
         }
 
-        // Deallocate min heap
-        if(deallocMinHeap(&minHeap) == GENERAL_FAILURE){
-            printf("Unable to deallocate min heap.\n");
-            return GENERAL_FAILURE;
+        if(buildMinHeap(&minHeap, frequencies, numOfCharacters, CHAR_MAX) == BUILD_FAILURE){
+            printf("Unable to build min heap.\n");
+            deallocMinHeap(&minHeap);
+            return BUILD_FAILURE;
         }
+
+        TreeNode * min;
+        while ((min = extractMin(&minHeap))) printf("'%c':%d,%d\n", min->character, min->frequency, minHeap.size);
+        
+
+
+        // Deallocate min heap
+        deallocMinHeap(&minHeap);
         return ENCODE_SUCCESS;
     }else if(strcmp(argv[1], DECODE) == 0){
         return DECODE_SUCCESS;
@@ -135,6 +145,32 @@ int initializeMinHeap(MinHeap * minHeap, int capacity){
 
     minHeap->size = 0;
     minHeap->capacity = capacity;
+    return OK;
+}
+
+// Returns: OK on success, BUILD_FAILURE on failure
+int buildMinHeap(MinHeap * minHeap, int frequencies[], int numOfCharacters, int frequencySize){
+    if(minHeap == NULL || numOfCharacters < 0 || frequencies == NULL) return BUILD_FAILURE;
+
+    int numInserted = 0;
+    int frequency = 0;
+
+    for(int i = 0; i < frequencySize && numInserted != numOfCharacters; i++){
+        if((frequency = frequencies[i]) != FREQUENCY_DEFAULT){
+            TreeNode * newNode = createTreeNode((char)i, frequency);
+            if(newNode == NULL){
+                return BUILD_FAILURE;
+            }
+            minHeap->nodes[numInserted++] = newNode;
+        }
+    }
+    
+    // Set new size
+    minHeap->size = numInserted;
+
+    // Restore heap property, by min heapifying
+    for (int i = (minHeap->size - 1) / 2; i >= 0; --i) 
+        downHeap(minHeap, i); 
     return OK;
 }
 
@@ -226,8 +262,8 @@ TreeNode * extractMin(MinHeap * minHeap){
         return minTreeNode;
     }
 
-    swapHeap(minHeap, 0, minHeap->size - 1);
-    minHeap->size--;
+    // Decrement size first
+    swapHeap(minHeap, 0, --minHeap->size);
     // Restore heap property
     downHeap(minHeap, 0);
     return minTreeNode;
