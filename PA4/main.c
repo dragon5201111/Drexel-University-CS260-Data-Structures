@@ -12,6 +12,7 @@
 #define FILE_ERROR -2
 #define INIT_FAILURE -3
 #define BUILD_FAILURE -4
+#define WRITE_FAILURE -6
 // For Arguments
 #define ARG_MAX 5
 #define ENCODE "encode"
@@ -43,13 +44,18 @@ typedef struct Code{
 //==========Function Prototypes==========
 // General
 void printUsage();
-int countFrequencies(char *, int[], int);
+int countFrequencies(char *, int[], int, int*);
+void printCompressionStatistics(int, int);
+
+
 
 // Code Table functions
 int initializeCodeTable(Code[], int);
 int buildCodeTable(Code[], TreeNode *);
 void buildCodeTableH(Code[], char *, int, TreeNode *);
 void deallocCodeTable(Code[], int);
+int encodePlainText(char *, char *, Code[]);
+int writeCodeTable(char *, Code[], int);
 
 
 // Tree functions
@@ -86,8 +92,8 @@ int main(int argc, char ** argv){
         outputFilePath = argv[4];
 
         // Count character frequencies
-        int numOfCharacters, frequencies[CHAR_MAX];
-        if((numOfCharacters = countFrequencies(inputTextFilePath, frequencies, CHAR_MAX)) == FILE_ERROR){
+        int numOfCharacters = 0, characterTotal = 0, frequencies[CHAR_MAX];
+        if((numOfCharacters = countFrequencies(inputTextFilePath, frequencies, CHAR_MAX, &characterTotal)) == FILE_ERROR){
             printf("Unable to read file: %s for frequencies.\n", inputTextFilePath);
             return FILE_ERROR;
         }
@@ -104,6 +110,9 @@ int main(int argc, char ** argv){
             deallocMinHeap(&minHeap);
             return BUILD_FAILURE;
         }
+
+        // Debug to print heap
+        //for(int i = 0; i < minHeap.size; i++){printf("(%c,%d),", minHeap.nodes[i]->character, minHeap.nodes[i]->frequency);}printf("\n");
         
         // Debug to test extract min
         //TreeNode * min; while((min = extractMin(&minHeap))) printf("Extracted: '%c':%d\n", min->character, min->frequency);
@@ -137,6 +146,28 @@ int main(int argc, char ** argv){
         // Debug to print code table
         //for(int i = 0; i < CHAR_MAX; i++) {if(codeTable[i].frequency != FREQUENCY_DEFAULT) printf("Character:%c, Frequency: %d, Binary Code:%s\n", codeTable[i].character, codeTable[i].frequency, codeTable[i].binaryCode);}
         
+        // Encode input file to output file
+        int bits;
+        if((bits = encodePlainText(inputTextFilePath, outputFilePath, codeTable)) == WRITE_FAILURE){
+            printf("Unable to encode plaintext file.\n");
+            deallocTreeNode(decodingTree);
+            deallocMinHeap(&minHeap);
+            deallocCodeTable(codeTable, CHAR_MAX);
+            return WRITE_FAILURE;
+        }
+
+
+        // Write code table
+        if(writeCodeTable(codeTableFilePath, codeTable, CHAR_MAX) == WRITE_FAILURE){
+            printf("Unable to write code table to file.\n");
+            deallocTreeNode(decodingTree);
+            deallocMinHeap(&minHeap);
+            deallocCodeTable(codeTable, CHAR_MAX);
+            return WRITE_FAILURE;
+        }
+
+        printCompressionStatistics(characterTotal, bits);
+
         // Min heap size is zero so we need to free decoding tree as well
         // Decoding tree contains reference to all nodes (preassumably)
         deallocTreeNode(decodingTree);
@@ -151,10 +182,58 @@ int main(int argc, char ** argv){
     return GENERAL_FAILURE;
 }
 
+// Prints compression statistics
+void printCompressionStatistics(int numOfCharacters, int bits){
+    printf("Original: %d bits\n", numOfCharacters*8); //assuming that you store the number of characters in variable "uncompressed". *8 is because ASCII table uses 8 bits to represent each character
+    printf("Compressed: %d bits\n", bits); //assuming that you store the number of bits (i.e., 0/1s) of encoded text in variable "compressed_size"
+    printf("Compression Ratio: %.2f%%\n", (float)bits/((float)numOfCharacters*8)*100); //This line will print the compression ration in percentages, up to 2 decimals.
+}
+
 // Prints usage
 void printUsage(){
     printf("Invalid arugments or not enough arguments supplied.\n");
     printf("Usage: [encode/decode] [path input text file/ path input code table file] [path output code table file/ path input encoded text file] [path output encoded text file/ path output decoded text file]\n");
+}
+
+// Returns: Bits wrote on success (characters), WRITE_FAILURE on failure to write or open file
+int encodePlainText(char * inputFilePath, char * outputFilePath, Code codeTable[]){
+    FILE *inputFile = fopen(inputFilePath, "r"), *outputFile = fopen(outputFilePath, "w");
+
+    if (inputFile == NULL || outputFile == NULL)
+    {
+     return WRITE_FAILURE;
+    }
+
+    char c;
+    char * binaryCode;
+    int bits = 0;
+    while ((c = fgetc(inputFile)) != EOF && c!='\n')
+    {
+        binaryCode = codeTable[(int)c].binaryCode;
+        bits += strlen(binaryCode);
+       fprintf(outputFile, "%s", binaryCode);
+    }
+
+    fclose(outputFile);
+    fclose(inputFile);
+    return bits;
+}
+
+// Returns: OK on write success, WRITE_FAILURE on failure to write
+int writeCodeTable(char * filePath, Code codeTable [], int size){
+    FILE *codeTableFile = fopen(filePath, "w");
+    if (codeTableFile == NULL)
+    {
+     return WRITE_FAILURE;
+    }
+
+    for(int i = size-1; i >= 0; i--)
+    { 
+      if(codeTable[i].binaryCode != NULL)
+        fprintf(codeTableFile, "%c\t%s\t%d\n", codeTable[i].character, codeTable[i].binaryCode, codeTable[i].frequency);
+    }
+    fclose(codeTableFile);
+    return OK;
 }
 
 void deallocCodeTable(Code codeTable[], int size){
@@ -207,7 +286,7 @@ int initializeCodeTable(Code codeTable[], int size){
 }
 
 // Returns: Number of characters read on success, FILE_ERROR on failure
-int countFrequencies(char * filePath, int frequencies[], int size){
+int countFrequencies(char * filePath, int frequencies[], int size, int * characterTotal){
     FILE *inputFile = fopen(filePath, "r");
 
     if (inputFile == NULL)
@@ -222,6 +301,7 @@ int countFrequencies(char * filePath, int frequencies[], int size){
     while ((c = fgetc(inputFile)) != EOF && c!='\n')
     {
        frequencies[(int)c]++;
+       *characterTotal += 1;
     }
 
     int numOfCharacters = 0;
@@ -303,6 +383,7 @@ int insertMinHeap(MinHeap * minHeap, TreeNode * treeNode){
 
     minHeap->nodes[minHeap->size++] = treeNode;
     upHeap(minHeap, minHeap->size-1);
+
     return OK;
 }
 
@@ -312,32 +393,49 @@ void swapHeap(MinHeap * minHeap, int i, int j){
     minHeap->nodes[j] = tempTreeNode;
 }
 
-void upHeap(MinHeap * minHeap, int i){
+void upHeap(MinHeap *minHeap, int i) {
     int parentI = getParent(i);
-    if(parentI < 0) return;
-    
-    if(minHeap->nodes[i]->frequency < minHeap->nodes[parentI]->frequency){
+    if (parentI < 0) return;  // If we reach the root, stop recursion.
+
+    // Compare frequencies, and if tied, compare ASCII values
+    if (minHeap->nodes[i]->frequency < minHeap->nodes[parentI]->frequency ||
+        (minHeap->nodes[i]->frequency == minHeap->nodes[parentI]->frequency &&
+         minHeap->nodes[i]->character < minHeap->nodes[parentI]->character)) {
+        
+        // Swap nodes
         swapHeap(minHeap, i, parentI);
+
+        // Recursively call upHeap for the parent index
         upHeap(minHeap, parentI);
     }
-
 }
 
-void downHeap(MinHeap * minHeap, int i){
+void downHeap(MinHeap *minHeap, int i) {
     int smallestI = i;
     int leftChildI = getLeftChild(i);
     int rightChildI = getRightChild(i);
+    
+    if (leftChildI < minHeap->size) {
+        if (minHeap->nodes[leftChildI]->frequency < minHeap->nodes[smallestI]->frequency ||
+            (minHeap->nodes[leftChildI]->frequency == minHeap->nodes[smallestI]->frequency &&
+             minHeap->nodes[leftChildI]->character < minHeap->nodes[smallestI]->character)) {
+            smallestI = leftChildI;
+        }
+    }
 
-    if(leftChildI < minHeap->size && minHeap->nodes[leftChildI]->frequency < minHeap->nodes[smallestI]->frequency)
-        smallestI = leftChildI;
-    if(rightChildI < minHeap->size && minHeap->nodes[rightChildI]->frequency < minHeap->nodes[smallestI]->frequency)
-        smallestI = rightChildI;
-
-    if(smallestI != i){
+    if (rightChildI < minHeap->size) {
+        if (minHeap->nodes[rightChildI]->frequency < minHeap->nodes[smallestI]->frequency ||
+            (minHeap->nodes[rightChildI]->frequency == minHeap->nodes[smallestI]->frequency &&
+             minHeap->nodes[rightChildI]->character < minHeap->nodes[smallestI]->character)) {
+            smallestI = rightChildI;
+        }
+    }
+    if (smallestI != i) {
         swapHeap(minHeap, i, smallestI);
         downHeap(minHeap, smallestI);
     }
 }
+
 
 // Returns: TreeNode * on success, on fail, returns NULL
 TreeNode * createTreeNode(char character, int frequency){
@@ -386,10 +484,8 @@ TreeNode * buildDecodingTree(MinHeap * minHeap){
             minHeap->size = sizeOfHeap;
             return NULL;
         }
-
         insertTreeNode->left = leftTreeNode;
         insertTreeNode->right = rightTreeNode;
-
         insertMinHeap(minHeap, insertTreeNode);
     }
 
