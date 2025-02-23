@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 //==========Macros==========
 // Return Codes
@@ -19,8 +20,10 @@
 #define DECODE "decode"
 // MISC
 #define CHAR_MAX 255
+#define STRING_MAX 1024
 #define FREQUENCY_DEFAULT 0
 #define INTERNAL_CHARACTER '\0'
+#define CODE_TABLE_FORMAT "%c\t%s\t%d\n"
 
 //==========Structures==========
 typedef struct TreeNode{
@@ -56,7 +59,7 @@ void buildCodeTableH(Code[], char *, int, TreeNode *);
 void deallocCodeTable(Code[], int);
 int encodePlainText(char *, char *, Code[]);
 int writeCodeTable(char *, Code[], int);
-int readFileIntoCodeTable(char *, Code[], int);
+int readFileIntoCodeTable(char * codeTableFilePath, Code codeTable[]);
 
 
 // Tree functions
@@ -65,6 +68,7 @@ TreeNode * extractMin(MinHeap *);
 TreeNode * buildDecodingTree(MinHeap *);
 int getTreeHeight(TreeNode *);
 void deallocTreeNode(TreeNode *);
+int rebuildDecodingTree(TreeNode **, Code[], int);
 
 // Heap functions
 int initializeMinHeap(MinHeap *, int);
@@ -175,12 +179,127 @@ int main(int argc, char ** argv){
         deallocCodeTable(codeTable, CHAR_MAX);
         return ENCODE_SUCCESS;
     }else if(strcmp(argv[1], DECODE) == 0){
-        printf("Decode unimplemented!\n");
+        //printf("Decode unimplemented!\n");
+        codeTableFilePath = argv[2];
+        inputTextFilePath = argv[3];
+        outputFilePath = argv[4];
+
+        Code codeTable[CHAR_MAX];
+        if(initializeCodeTable(codeTable, CHAR_MAX) == INIT_FAILURE){
+            printf("Unable to initialize code table.\n");
+            return INIT_FAILURE;
+        }
+        
+
+        if(readFileIntoCodeTable(codeTableFilePath, codeTable) == FILE_ERROR){
+            printf("Unable to read %s into code table.\n", codeTableFilePath);
+            deallocCodeTable(codeTable, CHAR_MAX);
+            return FILE_ERROR;
+        }
+        // Debug for printing code table
+        //for(int i = 0; i< CHAR_MAX; i++){if(codeTable[i].binaryCode != NULL){printf("Character:%c, BinaryCode:%s, Frequency:%d\n", codeTable[i].character, codeTable[i].binaryCode, codeTable[i].frequency);}}
+        
+        TreeNode * decodingTree = NULL;
+        if(rebuildDecodingTree(&decodingTree, codeTable, CHAR_MAX) == BUILD_FAILURE){
+            printf("Unable to reconstruct decoding tree.\n");
+            deallocTreeNode(decodingTree);
+            deallocCodeTable(codeTable, CHAR_MAX);
+            return BUILD_FAILURE;
+        }
+
+        deallocTreeNode(decodingTree);
+        deallocCodeTable(codeTable, CHAR_MAX);
         return DECODE_SUCCESS;
     }
 
     // Invalid argv[1]
     return GENERAL_FAILURE;
+}
+
+// Returns OK on success, BUILD_FAILURE on failure
+int rebuildDecodingTree(TreeNode ** decodingTree, Code codeTable[], int size){
+    *decodingTree = createTreeNode(INTERNAL_CHARACTER, FREQUENCY_DEFAULT);
+
+    if(decodingTree == NULL) return BUILD_FAILURE;
+
+    TreeNode * currentTreeNode;
+
+    int j = 0;
+    for(int i = 0; i < size; i++){
+        if(codeTable[i].binaryCode != NULL){
+            currentTreeNode = *decodingTree;
+            j=0;
+            while(codeTable[i].binaryCode[j]){
+                if(codeTable[i].binaryCode[j] == '0') {
+                    if (currentTreeNode->left == NULL) {
+                        currentTreeNode->left = createTreeNode(INTERNAL_CHARACTER, FREQUENCY_DEFAULT); 
+                        if(currentTreeNode->left == NULL) return BUILD_FAILURE;
+                    }
+                    currentTreeNode = currentTreeNode->left;
+                } 
+                else if(codeTable[i].binaryCode[j] == '1') {
+                    if (currentTreeNode->right == NULL) {
+                        currentTreeNode->right = createTreeNode(INTERNAL_CHARACTER, FREQUENCY_DEFAULT);
+                        if(currentTreeNode->right == NULL) return BUILD_FAILURE;
+                    }
+                    currentTreeNode = currentTreeNode->right;
+                }
+                j++;
+            }
+            
+            currentTreeNode->character = codeTable[i].character;
+        }
+    }
+
+    return OK;
+}
+
+// Returns FILE_ERROR if file has any issues, OK otherwise.
+int readFileIntoCodeTable(char * codeTableFilePath, Code codeTable[]) {
+    FILE * codeTableFile = fopen(codeTableFilePath, "r");
+    if(codeTableFile == NULL) {
+        return FILE_ERROR;
+    }
+
+    char lineBuffer[STRING_MAX];
+    char character;
+    char frequency[STRING_MAX];
+    char code[STRING_MAX];
+
+    while(fgets(lineBuffer, sizeof(lineBuffer), codeTableFile)) {
+        if (lineBuffer[0] == '\0' || lineBuffer[0] == '\n') continue;
+
+        character = lineBuffer[0];
+
+        int i = 1;
+        while(i < STRING_MAX && isspace(lineBuffer[i])) i++;
+
+        int j = 0;
+        while(i < STRING_MAX && !isspace(lineBuffer[i])) code[j++] = lineBuffer[i++];
+        code[j] = '\0';
+        i++;
+
+        j = 0;
+        while(i < STRING_MAX && isdigit(lineBuffer[i])) frequency[j++] = lineBuffer[i++];
+        frequency[j] = '\0';
+
+        codeTable[(int)character].binaryCode = strdup(code);
+        if (codeTable[(int)character].binaryCode == NULL) {
+            fclose(codeTableFile);
+            return FILE_ERROR;
+        }
+
+        codeTable[(int)character].frequency = atoi(frequency);
+        if(codeTable[(int)character].frequency <= 0) {
+            fclose(codeTableFile);
+            return FILE_ERROR;
+        }
+
+        codeTable[(int)character].character = character;
+    }
+
+    fclose(codeTableFile);
+    return OK;
 }
 
 // Prints compression statistics
@@ -231,7 +350,7 @@ int writeCodeTable(char * filePath, Code codeTable [], int size){
     for(int i = size-1; i >= 0; i--)
     { 
       if(codeTable[i].binaryCode != NULL)
-        fprintf(codeTableFile, "%c\t%s\t%d\n", codeTable[i].character, codeTable[i].binaryCode, codeTable[i].frequency);
+        fprintf(codeTableFile, CODE_TABLE_FORMAT, codeTable[i].character, codeTable[i].binaryCode, codeTable[i].frequency);
     }
     fclose(codeTableFile);
     return OK;

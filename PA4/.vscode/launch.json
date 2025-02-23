@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/main",
-            "args": ["encode", "message.txt", "./out/test_code_table.txt", "./out/test_enc_dec.txt"],
+            "args": ["decode", "./out/code_table.txt", "./out/encoded.txt", "./out/decoded.txt"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

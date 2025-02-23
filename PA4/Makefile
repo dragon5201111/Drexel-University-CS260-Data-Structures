@@ -1,11 +1,5 @@
 CC = gcc
 CFLAGS = -Wall -g
-INPUT_FILE = message.txt
-ENCODE_DECODE = encode
-OUTPUT_CODE_TABLE_FILE = ./out/test_code_table.txt
-OUTPUT_CODE_TABLE_FILE_SOLUTION = ./out/test_code_table_solution.txt
-ENCODED_DECODED_FILE = ./out/test_enc_dec.txt
-ENCODED_DECODED_FILE_SOLUTIUON = ./out/test_enc_dec_solution.txt
 
 
 SRC = $(wildcard *.c)
@@ -24,15 +18,14 @@ clean:
 	-rm -rf $(TARGET) $(OBJ)
 	-rm -rf ./out/*
 
-run: $(TARGET)
-	./$(TARGET) $(ENCODE_DECODE) $(INPUT_FILE) $(OUTPUT_CODE_TABLE_FILE) $(ENCODED_DECODED_FILE)
+runEncode: $(TARGET)
+	./$(TARGET) encode ./out/message.txt ./out/code_table.txt ./out/encoded.txt
 
-	
-runSol:
-	./$(SOL) $(ENCODE_DECODE) $(INPUT_FILE) $(OUTPUT_CODE_TABLE_FILE_SOLUTION) $(ENCODED_DECODED_FILE_SOLUTIUON)
+runDecode: $(TARGET)
+	./$(TARGET) decode ./out/code_table.txt ./out/encoded.txt ./out/decoded.txt
 
 valgrind: $(TARGET)
-	valgrind --tool=memcheck --leak-check=yes ./$(TARGET) $(ENCODE_DECODE) $(INPUT_FILE) $(OUTPUT_CODE_TABLE_FILE) $(ENCODED_DECODED_FILE)
+	valgrind --tool=memcheck --leak-check=yes ./$(TARGET) decode ./out/code_table.txt ./out/encoded.txt ./out/decoded.txt
 	
-.PHONY: clean run valgrind
+.PHONY: clean run runD valgrind
 
