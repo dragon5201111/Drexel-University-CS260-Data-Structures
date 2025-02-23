@@ -56,6 +56,7 @@ void buildCodeTableH(Code[], char *, int, TreeNode *);
 void deallocCodeTable(Code[], int);
 int encodePlainText(char *, char *, Code[]);
 int writeCodeTable(char *, Code[], int);
+int readFileIntoCodeTable(char *, Code[], int);
 
 
 // Tree functions
@@ -156,7 +157,6 @@ int main(int argc, char ** argv){
             return WRITE_FAILURE;
         }
 
-
         // Write code table
         if(writeCodeTable(codeTableFilePath, codeTable, CHAR_MAX) == WRITE_FAILURE){
             printf("Unable to write code table to file.\n");
@@ -175,6 +175,7 @@ int main(int argc, char ** argv){
         deallocCodeTable(codeTable, CHAR_MAX);
         return ENCODE_SUCCESS;
     }else if(strcmp(argv[1], DECODE) == 0){
+        printf("Decode unimplemented!\n");
         return DECODE_SUCCESS;
     }
 
