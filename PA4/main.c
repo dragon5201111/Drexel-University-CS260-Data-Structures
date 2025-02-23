@@ -34,16 +34,31 @@ typedef struct MinHeap{
     struct TreeNode ** nodes;
 }MinHeap;
 
+typedef struct Code{
+    char character;
+    int frequency;
+    char * binaryCode;
+}Code;
+
 //==========Function Prototypes==========
 // General
 void printUsage();
 int countFrequencies(char *, int[], int);
 
+// Code Table functions
+int initializeCodeTable(Code[], int);
+int buildCodeTable(Code[], TreeNode *);
+void buildCodeTableH(Code[], char *, int, TreeNode *);
+void deallocCodeTable(Code[], int);
+
+
 // Tree functions
 TreeNode * createTreeNode(char, int);
 TreeNode * extractMin(MinHeap *);
 TreeNode * buildDecodingTree(MinHeap *);
+int getTreeHeight(TreeNode *);
 void deallocTreeNode(TreeNode *);
+
 // Heap functions
 int initializeMinHeap(MinHeap *, int);
 int buildMinHeap(MinHeap *, int[], int, int);
@@ -100,11 +115,33 @@ int main(int argc, char ** argv){
             deallocMinHeap(&minHeap);
             return BUILD_FAILURE;
         }
+
+        //Initialize code table
+        Code codeTable[CHAR_MAX];
+        if(initializeCodeTable(codeTable, CHAR_MAX) == INIT_FAILURE){
+            printf("Unable to initialize code table.\n");
+            deallocTreeNode(decodingTree);
+            deallocMinHeap(&minHeap);
+            return INIT_FAILURE;
+        }
+
+        // Build code table
+        if(buildCodeTable(codeTable, decodingTree) == BUILD_FAILURE){
+            printf("Unable to build code table.\n");
+            deallocCodeTable(codeTable, CHAR_MAX);
+            deallocTreeNode(decodingTree);
+            deallocMinHeap(&minHeap);
+            return BUILD_FAILURE;
+        }
+
+        // Debug to print code table
+        //for(int i = 0; i < CHAR_MAX; i++) {if(codeTable[i].frequency != FREQUENCY_DEFAULT) printf("Character:%c, Frequency: %d, Binary Code:%s\n", codeTable[i].character, codeTable[i].frequency, codeTable[i].binaryCode);}
         
         // Min heap size is zero so we need to free decoding tree as well
         // Decoding tree contains reference to all nodes (preassumably)
         deallocTreeNode(decodingTree);
         deallocMinHeap(&minHeap);
+        deallocCodeTable(codeTable, CHAR_MAX);
         return ENCODE_SUCCESS;
     }else if(strcmp(argv[1], DECODE) == 0){
         return DECODE_SUCCESS;
@@ -118,6 +155,55 @@ int main(int argc, char ** argv){
 void printUsage(){
     printf("Invalid arugments or not enough arguments supplied.\n");
     printf("Usage: [encode/decode] [path input text file/ path input code table file] [path output code table file/ path input encoded text file] [path output encoded text file/ path output decoded text file]\n");
+}
+
+void deallocCodeTable(Code codeTable[], int size){
+    if(codeTable == NULL) return;
+
+    for(int i = 0; i < size; i++){
+        if(codeTable[i].binaryCode != NULL) free(codeTable[i].binaryCode);
+    }
+}
+
+// Returns: OK on build success, BUILD_FAILURE on build failure.
+int buildCodeTable(Code codeTable[], TreeNode * decodingTree){
+    if(codeTable == NULL || decodingTree == NULL) return BUILD_FAILURE;
+    // Height of tree plus 1 for null terminator
+    char code[getTreeHeight(decodingTree) + 1];
+    buildCodeTableH(codeTable, code, 0, decodingTree);
+    return OK;
+}
+
+// Helper function to build code table
+void buildCodeTableH(Code codeTable[], char * code, int codeLevel, TreeNode * decodingTree){
+    if(decodingTree == NULL) return;
+    
+    // Not internal node and is a leaf node
+    if(decodingTree->character != INTERNAL_CHARACTER && (decodingTree->left == NULL && decodingTree->right == NULL)){
+        codeTable[(int)decodingTree->character].character = decodingTree->character;
+        codeTable[(int)decodingTree->character].frequency = decodingTree->frequency;
+
+        // Copy code
+        code[codeLevel] = '\0';
+        codeTable[(int)decodingTree->character].binaryCode = strdup(code);
+    }
+
+    code[codeLevel] = '0';
+    buildCodeTableH(codeTable, code, codeLevel + 1, decodingTree->left);
+    code[codeLevel] = '1';
+    buildCodeTableH(codeTable, code, codeLevel + 1, decodingTree->right);
+}
+
+// Returns: OK on success, INIT_FAILURE on failure
+int initializeCodeTable(Code codeTable[], int size){
+    if(codeTable == NULL || size < 0) return INIT_FAILURE;
+
+    for(int i = 0; i < size; i++){
+        codeTable[i].frequency = FREQUENCY_DEFAULT;
+        codeTable[i].binaryCode = NULL;
+    }
+    
+    return OK;
 }
 
 // Returns: Number of characters read on success, FILE_ERROR on failure
@@ -317,4 +403,14 @@ void deallocTreeNode(TreeNode * treeNode){
     deallocTreeNode(treeNode->right);
 
     free(treeNode);
+}
+
+// Returns: Height of tree
+int getTreeHeight(TreeNode * treeNode){
+    if(treeNode == NULL) return 0;
+
+    int leftHeight = getTreeHeight(treeNode->left);
+    int rightHeight = getTreeHeight(treeNode->right);
+
+    return ((leftHeight > rightHeight) ? leftHeight : rightHeight) + 1;
 }
