@@ -24,8 +24,15 @@ runEncode: $(TARGET)
 runDecode: $(TARGET)
 	./$(TARGET) decode ./out/code_table.txt ./out/encoded.txt ./out/decoded.txt
 
+	
+runEncodeSol:
+	./$(SOL) encode ./out/message.txt ./out/code_table.txt ./out/encoded.txt
+
+runDecodeSol:
+	./$(SOL) decode ./out/code_table.txt ./out/encoded.txt ./out/decoded.txt
+
 valgrind: $(TARGET)
 	valgrind --tool=memcheck --leak-check=yes ./$(TARGET) decode ./out/code_table.txt ./out/encoded.txt ./out/decoded.txt
 	
-.PHONY: clean run runD valgrind
+.PHONY: clean runEncode runDecode runDecodeSol runEncodeSol
 

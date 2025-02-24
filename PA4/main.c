@@ -9,7 +9,7 @@
 #define GENERAL_FAILURE -2
 #define OK 3
 #define ENCODE_SUCCESS 0
-#define DECODE_SUCCESS 1
+#define DECODE_SUCCESS 0
 #define FILE_ERROR -2
 #define INIT_FAILURE -3
 #define BUILD_FAILURE -4
@@ -49,8 +49,7 @@ typedef struct Code{
 void printUsage();
 int countFrequencies(char *, int[], int, int*);
 void printCompressionStatistics(int, int);
-
-
+int decodeCipherText(TreeNode *, char *, char *);
 
 // Code Table functions
 int initializeCodeTable(Code[], int);
@@ -207,6 +206,13 @@ int main(int argc, char ** argv){
             return BUILD_FAILURE;
         }
 
+        if(decodeCipherText(decodingTree, inputTextFilePath, outputFilePath) == WRITE_FAILURE){
+            printf("Unable to write decoded text to %s from %s.\n", outputFilePath, inputTextFilePath);
+            deallocTreeNode(decodingTree);
+            deallocCodeTable(codeTable, CHAR_MAX);
+            return WRITE_FAILURE;
+        }
+
         deallocTreeNode(decodingTree);
         deallocCodeTable(codeTable, CHAR_MAX);
         return DECODE_SUCCESS;
@@ -214,6 +220,51 @@ int main(int argc, char ** argv){
 
     // Invalid argv[1]
     return GENERAL_FAILURE;
+}
+
+// Returns OK on success, WRITE_FAILURE on failure
+int decodeCipherText(TreeNode * decodingTree, char * inputFilePath, char * outputFilePath) {
+    FILE *inputFile = fopen(inputFilePath, "r"), *outputFile = fopen(outputFilePath, "w");
+
+    if (inputFile == NULL || outputFile == NULL) {
+        return WRITE_FAILURE;
+    }
+
+    TreeNode * currentNode = decodingTree;
+    char c;
+
+    fseek(inputFile, 0, SEEK_END);
+    long fileSize = ftell(inputFile);
+    fseek(inputFile, 0, SEEK_SET);
+
+    char *encodedData = (char *)malloc(fileSize + 1);
+    if (encodedData == NULL) {
+        fclose(inputFile);
+        fclose(outputFile);
+        return WRITE_FAILURE;
+    }
+    
+    fread(encodedData, 1, fileSize, inputFile);
+    encodedData[fileSize] = '\0';
+
+    for (long i = 0; i < fileSize; i++) {
+        c = encodedData[i];
+        if (c == '0') {
+            currentNode = currentNode->left;
+        } else if (c == '1') {
+            currentNode = currentNode->right;
+        }
+
+        if (currentNode != NULL && currentNode->left == NULL && currentNode->right == NULL) {
+            fputc(currentNode->character, outputFile);
+            currentNode = decodingTree;
+        }
+    }
+
+    free(encodedData);
+    fclose(outputFile);
+    fclose(inputFile);
+    return OK;
 }
 
 // Returns OK on success, BUILD_FAILURE on failure
