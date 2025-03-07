@@ -3,8 +3,8 @@ CFLAGS = -Wall -g
 SRC=$(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
-IN_FILE="test_input/3_easy.txt"
-OUT_FILE="test_output/3_easy_out.txt"
+IN_FILE="./test_input/3_easy.txt"
+OUT_FILE="./test_output/3_easy_out.txt"
 
 TARGET=main
 
@@ -19,7 +19,10 @@ $(TARGET): $(OBJ)
 run: $(TARGET)
 	./$(TARGET) $(IN_FILE) $(OUT_FILE)
 
+valgrind: $(TARGET)
+	valgrind --tool=memcheck --leak-check=yes ./$(TARGET) $(IN_FILE) $(OUT_FILE)
+
 clean:
 	rm -rf *.o $(TARGET)
 
-.PHONY: run clean
+.PHONY: run clean valgrind
