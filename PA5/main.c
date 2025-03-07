@@ -99,16 +99,51 @@ void close_input_and_output_file(FILE * input_file, FILE * output_file){
 	fclose(output_file);
 }
 
-void _print_puzzle(SlidingPuzzle * puzzle){
-	if(puzzle == NULL)
-		return;
-	
-	int k = puzzle->k;
-	for(int i = 0; i < k * k; i++){
-		printf("%d ", puzzle->board[i]);
-		if((i+1) % k == 0)
-			putchar('\n');
-	}
+void _print_puzzle(SlidingPuzzle *puzzle) {
+    if (puzzle == NULL)
+        return;
+	printf("======================================\n");
+    printf("Puzzle Statistics:\n* Size -> %d x %d\n* Predecessor -> %s\n", 
+        puzzle->k, puzzle->k, 
+        (puzzle->predecessor_puzzle == NULL) ? "No" : "Yes");
+    
+    int k = puzzle->k;
+    int zero_index = -1;
+    
+    for (int i = 0; i < k * k; i++) {
+        if (puzzle->board[i] == 0) {
+            zero_index = i;
+            break;
+        }
+    }
+
+    // Print the board
+    for (int i = 0; i < k * k; i++) {
+        int is_neighbor = 0;
+        
+        int row = i / k;
+        int col = i % k;
+        
+		int zero_row = zero_index / k;
+		int zero_col = zero_index % k;
+		if ((row == zero_row && abs(col - zero_col) == 1) || 
+			(col == zero_col && abs(row - zero_row) == 1)) {
+			is_neighbor = 1;
+		}
+
+        if (puzzle->board[i] == 0) {
+            printf("\033[31m%-3d\033[0m ", puzzle->board[i]); // print 0 in red
+        } else if (is_neighbor) {
+            printf("\033[38;5;214m%-3d\033[0m ", puzzle->board[i]); // print neighbor in orange
+        } else {
+            printf("%-3d ", puzzle->board[i]); // print other numbers in default color
+        }
+
+        if ((i + 1) % k == 0)
+            putchar('\n');
+    }
+	printf("======================================\n");
+
 }
 
 int main(int argc, char **argv){
@@ -134,6 +169,7 @@ int main(int argc, char **argv){
 
 	/*
 	TODO:
+		0.) Add puzzle indexing operations
 		1.) Implement puzzle queue
 		2.) Implement BFS
 		3.) Output solution

@@ -3,8 +3,10 @@ CFLAGS = -Wall -g
 SRC=$(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
-IN_FILE="./test_input/3_easy.txt"
-OUT_FILE="./test_output/3_easy_out.txt"
+FILE_NAME=1_easy
+FILE_EXT=.txt
+IN_FILE="./test_input/$(FILE_NAME)$(FILE_EXT)"
+OUT_FILE="./test_output/$(FILE_NAME)_out$(FILE_EXT)"
 
 TARGET=main
 
