@@ -8,7 +8,6 @@ typedef struct SlidingPuzzle{
 	struct SlidingPuzzle * predecessor_puzzle;
 }SlidingPuzzle;
 
-
 typedef struct PuzzleQueueNode{
 	SlidingPuzzle * puzzle;
 	struct PuzzleQueueNode * next;
@@ -108,6 +107,11 @@ int puzzle_queue_is_empty(PuzzleQueue * puzzle_queue){
 	return (puzzle_queue->head == NULL && puzzle_queue->tail == NULL);
 }
 
+
+
+
+
+
 // File Functions
 int open_input_and_output_file(FILE ** input_file, FILE ** output_file, char ** argv){
 	*input_file = fopen(argv[1], "r");
@@ -119,6 +123,11 @@ void close_input_and_output_file(FILE * input_file, FILE * output_file){
 	fclose(input_file);
 	fclose(output_file);
 }
+
+
+
+
+
 
 // Puzzle Functions
 /*
@@ -334,18 +343,24 @@ void _print_puzzle(SlidingPuzzle *puzzle) {
 }
 
 
+
+
+
+
+
 int main(int argc, char **argv){
 	if(argc != 3){
 		fprintf(stderr, "Requires an input and output file. Cannot proceed.\n");
 		return EXIT_FAILURE;
 	}
 
+	// Open input and output files
 	FILE *input_file = NULL, *output_file = NULL;
 	if(!open_input_and_output_file(&input_file, &output_file, argv)){
 		fprintf(stderr, "Couldn't open input or output file.\n");
 		return EXIT_FAILURE;
 	}
-
+	
 	SlidingPuzzle * initial_puzzle;
 	if((initial_puzzle = create_puzzle_from_input_file(input_file)) == NULL){
 		fprintf(stderr, "Unable to create initial sliding puzzle.\n");
@@ -369,6 +384,7 @@ int main(int argc, char **argv){
 	TODO:
 		1.) Implement Hash Table to keep track of created boards
 		2.) Implement BFS
+		2.5) Maybe implement adjacency list???
 		3.) Output solution
 	*/
 	free_puzzle(initial_puzzle);
