@@ -113,13 +113,15 @@ void _print_puzzle(SlidingPuzzle *puzzle) {
 	}
 
 	printf("======================================\n");
-    printf("Puzzle Statistics:\n* Size -> %d x %d\n* Predecessor -> %s\n* Is Unsolvable -> %s\n", 
+    printf("Puzzle Statistics:\n======================================\n* Size -> %d x %d\n* Has Predecessor -> %s\n* Is Solvable -> %s\n", 
         puzzle->k, puzzle->k, 
         (puzzle->predecessor_puzzle == NULL) ? "No (NULL)" : "Yes",
-		(is_puzzle_unsolvable(puzzle)) ? "Yes" : "No");
+		(!is_puzzle_unsolvable(puzzle)) ? "Yes" : "No");
 
     printf("======================================\n");
 	printf("Game Board:\n");
+	printf("======================================\n");
+
     int k = puzzle->k;
     int zero_index = -1;
     
@@ -157,15 +159,16 @@ void _print_puzzle(SlidingPuzzle *puzzle) {
     }
 	printf("======================================\n");
 	printf("Zero Neighbors:\n");
+	printf("======================================\n");
+
 	int zero_neighbors [4];
 	get_puzzle_neighbors(puzzle, zero_index, zero_neighbors);
-	for(int i = 0; i < 4; i++){
-		if(zero_neighbors[i] != -1){
-			printf("\033[38;5;214m%d \033[0m ", puzzle->board[zero_neighbors[i]]);
-		}
-	}
+	
+	printf("Up Neighbor[%d] = \033[38;5;214m%d\033[0m\n", zero_neighbors[0], (zero_neighbors[0] == -1) ? -1 : puzzle->board[zero_neighbors[0]]);
+	printf("Down Neighbor[%d] = \033[38;5;214m%d\033[0m\n", zero_neighbors[1], (zero_neighbors[1] == -1) ? -1 : puzzle->board[zero_neighbors[1]]);
+	printf("Left Neighbor[%d] = \033[38;5;214m%d\033[0m\n", zero_neighbors[2], (zero_neighbors[2] == -1) ? -1 : puzzle->board[zero_neighbors[2]]);
+	printf("Right Neighbor[%d] = \033[38;5;214m%d\033[0m", zero_neighbors[3], (zero_neighbors[3] == -1) ? -1 : puzzle->board[zero_neighbors[3]]);
 	printf("\n======================================\n");
-
 }
 
 int row_and_column_in_puzzle_bounds(int row, int column, int k){
