@@ -8,29 +8,41 @@ typedef struct SlidingPuzzle{
 	struct SlidingPuzzle * predecessor_puzzle;
 }SlidingPuzzle;
 
-typedef struct PuzzleQueueNode{
-	SlidingPuzzle * puzzle;
-	struct PuzzleQueueNode * next;
-}PuzzleQueueNode;
+/*
+Returns:
+	1 if cannot be solved, otherwise, 0
+*/
+int is_puzzle_unsolvable(SlidingPuzzle * puzzle) {
+    int k = puzzle->k;
+    int inverted_pairs = 0;
+    int zero_index = -1;
 
-typedef struct PuzzleQueue{
-	PuzzleQueueNode * head;
-	PuzzleQueueNode * tail;
-}PuzzleQueue;
+    for (int i = 0; i < k * k; i++) {
+        if (puzzle->board[i] == 0) {
+            zero_index = i;
+			break;
+        }
+    }
 
-int is_puzzle_queue_empty(PuzzleQueue * puzzle_queue){
-	return (puzzle_queue->head == NULL && puzzle_queue->tail == NULL);
-}
+    for (int i = 0; i < k * k; i++) {
+        for (int j = i + 1; j < k * k; j++) {
+            if (puzzle->board[i] > puzzle->board[j] && 
+				puzzle->board[i] != 0 && 
+				puzzle->board[j] != 0) {
+                inverted_pairs++;
+            }
+        }
+    }
 
-PuzzleQueue * create_puzzle_queue(){
-	PuzzleQueue * puzzle_queue;
+	// k is even
+    if (k % 2 == 0) {
+        int zero_row = zero_index / k;
+		// Inversions plus zero_row is even
+        return (inverted_pairs + zero_row) % 2 == 0;
+    }
 
-	if((puzzle_queue = (PuzzleQueue*)malloc(sizeof(PuzzleQueue))) == NULL){
-		return NULL;
-	}
-	
-	puzzle_queue->head = puzzle_queue->tail = NULL;
-	return puzzle_queue;
+	// k is odd and number of inversions is odd
+    return inverted_pairs % 2 != 0;
 }
 
 SlidingPuzzle * create_puzzle(int k, int * board, SlidingPuzzle * predecessor_puzzle){
@@ -77,10 +89,6 @@ SlidingPuzzle * create_puzzle_from_input_file(FILE * input_file){
 void free_puzzle(SlidingPuzzle *puzzle) {
     if (puzzle == NULL) return;
 
-    if (puzzle->predecessor_puzzle != NULL){
-        free_puzzle(puzzle->predecessor_puzzle);
-	}
-
 	if(puzzle->board != NULL){
     	free(puzzle->board);
 	}
@@ -100,13 +108,18 @@ void close_input_and_output_file(FILE * input_file, FILE * output_file){
 }
 
 void _print_puzzle(SlidingPuzzle *puzzle) {
-    if (puzzle == NULL)
+    if (puzzle == NULL){
         return;
+	}
+
 	printf("======================================\n");
-    printf("Puzzle Statistics:\n* Size -> %d x %d\n* Predecessor -> %s\n", 
+    printf("Puzzle Statistics:\n* Size -> %d x %d\n* Predecessor -> %s\n* Is Unsolvable -> %s\n", 
         puzzle->k, puzzle->k, 
-        (puzzle->predecessor_puzzle == NULL) ? "No" : "Yes");
-    
+        (puzzle->predecessor_puzzle == NULL) ? "No (NULL)" : "Yes",
+		(is_puzzle_unsolvable(puzzle)) ? "Yes" : "No");
+
+    printf("======================================\n");
+	printf("Game Board:\n");
     int k = puzzle->k;
     int zero_index = -1;
     
@@ -143,7 +156,40 @@ void _print_puzzle(SlidingPuzzle *puzzle) {
             putchar('\n');
     }
 	printf("======================================\n");
+	printf("Zero Neighbors:\n");
+	int zero_neighbors [4];
+	get_puzzle_neighbors(puzzle, zero_index, zero_neighbors);
+	for(int i = 0; i < 4; i++){
+		if(zero_neighbors[i] != -1){
+			printf("\033[38;5;214m%d \033[0m ", puzzle->board[zero_neighbors[i]]);
+		}
+	}
+	printf("\n======================================\n");
 
+}
+
+int row_and_column_in_puzzle_bounds(int row, int column, int k){
+	return (row >= 0 && column >=0 && row < k && column < k);
+}
+
+/*	
+	First index is up, second is down, third is left, fourth is right
+	[-1,-1,-1,-1]
+	-1 at an index indicates there is no neighbor for that position respectively
+*/
+void get_puzzle_neighbors(SlidingPuzzle * puzzle, int i, int * neighbor_array){
+	int k = puzzle->k;
+	int row = i / k;
+	int column = i % k;
+
+	// up
+	neighbor_array[0] = row_and_column_in_puzzle_bounds(row-1, column, k) ? (row - 1) * k + column : -1; 
+	// down
+	neighbor_array[1] = row_and_column_in_puzzle_bounds(row+1, column, k) ? (row + 1) * k + column : -1; 
+	// left
+	neighbor_array[2] = row_and_column_in_puzzle_bounds(row, column-1, k) ? row * k + (column - 1) : -1; 
+	// right
+	neighbor_array[3] = row_and_column_in_puzzle_bounds(row, column+1, k) ? row * k + (column + 1) : -1; 
 }
 
 int main(int argc, char **argv){
