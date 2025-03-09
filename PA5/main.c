@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Puzzle Structure
 typedef struct SlidingPuzzle{
 	int k;
 	int * board;
 	struct SlidingPuzzle * predecessor_puzzle;
 }SlidingPuzzle;
 
+// Queue Structures
 typedef struct PuzzleQueueNode{
 	SlidingPuzzle * puzzle;
 	struct PuzzleQueueNode * next;
@@ -17,6 +19,9 @@ typedef struct PuzzleQueue{
 	PuzzleQueueNode * head;
 	PuzzleQueueNode * tail;
 }PuzzleQueue;
+
+
+
 
 // Queue Functions
 /*
@@ -130,23 +135,24 @@ void close_input_and_output_file(FILE * input_file, FILE * output_file){
 
 
 // Puzzle Functions
-/*
-Returns:
-	1 if cannot be solved, otherwise, 0
-*/
-int is_puzzle_unsolvable(SlidingPuzzle * puzzle) {
-    int k = puzzle->k;
-    int inverted_pairs = 0;
-    int zero_index = -1;
+int get_zero_index(SlidingPuzzle * puzzle){
+	int zero_index = -1;
+	int k = puzzle->k;
 
-    for (int i = 0; i < k * k; i++) {
-        if (puzzle->board[i] == 0) {
-            zero_index = i;
+	for(int i = 0; i < k*k; i++){
+		if(puzzle->board[i] == 0){
+			zero_index = i;
 			break;
-        }
-    }
+		}
+	}
+	return zero_index;
+}
 
-    for (int i = 0; i < k * k; i++) {
+int get_inverted_pairs(SlidingPuzzle * puzzle){
+	int k = puzzle->k;
+    int inverted_pairs = 0;
+
+	for (int i = 0; i < k * k; i++) {
         for (int j = i + 1; j < k * k; j++) {
             if (puzzle->board[i] > puzzle->board[j] && 
 				puzzle->board[i] != 0 && 
@@ -156,15 +162,30 @@ int is_puzzle_unsolvable(SlidingPuzzle * puzzle) {
         }
     }
 
-	// k is even
-    if (k % 2 == 0) {
-        int zero_row = zero_index / k;
-		// Inversions plus zero_row is even
-        return (inverted_pairs + zero_row) % 2 == 0;
-    }
+	return inverted_pairs;
+}
 
+int puzzle_is_unsolvable_by_inverted_pairs(int k, int zero_index, int inverted_pairs){
+	// k is even
+	if (k % 2 == 0) {
+		int zero_row = zero_index / k;
+		// Inversions plus zero_row is even
+		return (inverted_pairs + zero_row) % 2 == 0;
+	}
 	// k is odd and number of inversions is odd
-    return inverted_pairs % 2 != 0;
+	return inverted_pairs % 2 != 0;
+}
+
+/*
+Returns:
+	1 if cannot be solved, otherwise, 0
+*/
+int is_puzzle_unsolvable(SlidingPuzzle * puzzle) {
+    int k = puzzle->k;
+    int inverted_pairs = get_inverted_pairs(puzzle);
+    int zero_index = get_zero_index(puzzle);
+
+	return puzzle_is_unsolvable_by_inverted_pairs(k, zero_index, inverted_pairs);
 }
 
 SlidingPuzzle * create_puzzle(int k, int * board, SlidingPuzzle * predecessor_puzzle){
@@ -227,7 +248,7 @@ int row_and_column_in_puzzle_bounds(int row, int column, int k){
 	[-1,-1,-1,-1]
 	-1 at an index indicates there is no neighbor for that position respectively
 */
-void get_puzzle_neighbors(SlidingPuzzle * puzzle, int i, int * neighbor_array){
+int * get_puzzle_neighbors(SlidingPuzzle * puzzle, int i, int * neighbor_array){
 	int k = puzzle->k;
 	int row = i / k;
 	int column = i % k;
@@ -239,21 +260,14 @@ void get_puzzle_neighbors(SlidingPuzzle * puzzle, int i, int * neighbor_array){
 	// left
 	neighbor_array[2] = row_and_column_in_puzzle_bounds(row, column-1, k) ? row * k + (column - 1) : -1; 
 	// right
-	neighbor_array[3] = row_and_column_in_puzzle_bounds(row, column+1, k) ? row * k + (column + 1) : -1; 
+	neighbor_array[3] = row_and_column_in_puzzle_bounds(row, column+1, k) ? row * k + (column + 1) : -1;
+
+	return neighbor_array;
 }
 
-void get_zero_neighbors(SlidingPuzzle * puzzle, int * neighbor_array){
-	int zero_index = -1;
-	int k = puzzle->k;
-
-	for(int i = 0; i < k*k; i++){
-		if(puzzle->board[i] == 0){
-			zero_index = i;
-			break;
-		}
-	}
-
-	get_puzzle_neighbors(puzzle, zero_index, neighbor_array);
+int * get_zero_neighbors(SlidingPuzzle * puzzle, int * neighbor_array){
+	int zero_index = get_zero_index(puzzle);
+	return get_puzzle_neighbors(puzzle, zero_index, neighbor_array);
 }
 
 int puzzles_are_the_same(SlidingPuzzle * puzzle_one, SlidingPuzzle * puzzle_two){
@@ -281,14 +295,7 @@ void _print_puzzle_board(SlidingPuzzle *puzzle){
 	printf("======================================\n");
 
     int k = puzzle->k;
-    int zero_index = -1;
-    
-    for (int i = 0; i < k * k; i++) {
-        if (puzzle->board[i] == 0) {
-            zero_index = i;
-            break;
-        }
-    }
+    int zero_index = get_zero_index(puzzle);
 
     // Print the board
     for (int i = 0; i < k * k; i++) {
@@ -349,6 +356,7 @@ void _print_puzzle(SlidingPuzzle *puzzle) {
 
 
 int main(int argc, char **argv){
+	// Hardcoded 3, argument size will not change
 	if(argc != 3){
 		fprintf(stderr, "Requires an input and output file. Cannot proceed.\n");
 		return EXIT_FAILURE;
@@ -361,6 +369,7 @@ int main(int argc, char **argv){
 		return EXIT_FAILURE;
 	}
 	
+	// Create initial gameboard from input file
 	SlidingPuzzle * initial_puzzle;
 	if((initial_puzzle = create_puzzle_from_input_file(input_file)) == NULL){
 		fprintf(stderr, "Unable to create initial sliding puzzle.\n");
@@ -387,8 +396,10 @@ int main(int argc, char **argv){
 		2.5) Maybe implement adjacency list???
 		3.) Output solution
 	*/
+
+	// Free resources
 	free_puzzle(initial_puzzle);
 	free_puzzle_queue(puzzle_queue);
 	close_input_and_output_file(input_file, output_file);
-	return 0;
+	return EXIT_SUCCESS;
 }
