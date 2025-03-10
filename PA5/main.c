@@ -319,7 +319,7 @@ int puzzle_is_unsolvable_by_inverted_pairs(int k, int zero_index, int inverted_p
 Returns:
 	1 if cannot be solved, otherwise, 0
 */
-int is_puzzle_unsolvable(SlidingPuzzle * puzzle) {
+int puzzle_is_unsolvable(SlidingPuzzle * puzzle) {
     int k = puzzle->k;
     int inverted_pairs = get_inverted_pairs(puzzle);
     int zero_index = get_zero_index(puzzle);
@@ -384,12 +384,18 @@ int row_and_column_in_puzzle_bounds(int row, int column, int k){
 	return (row >= 0 && column >=0 && row < k && column < k);
 }
 
+void swap_puzzle_at_indexes(SlidingPuzzle * puzzle, int i, int j){
+	int temp = puzzle->board[i];
+	puzzle->board[i] = puzzle->board[j];
+	puzzle->board[j] = temp; 
+}
+
 /*	
 	First index is up, second is down, third is left, fourth is right
 	[-1,-1,-1,-1]
 	-1 at an index indicates there is no neighbor for that position respectively
 */
-int * get_puzzle_neighbors(SlidingPuzzle * puzzle, int i, int * neighbor_array){
+int * get_puzzle_neighbor_indexes(SlidingPuzzle * puzzle, int i, int * neighbor_array){
 	int k = puzzle->k;
 	int row = i / k;
 	int column = i % k;
@@ -406,18 +412,12 @@ int * get_puzzle_neighbors(SlidingPuzzle * puzzle, int i, int * neighbor_array){
 	return neighbor_array;
 }
 
-int * get_zero_neighbors(SlidingPuzzle * puzzle, int * neighbor_array){
-	int zero_index = get_zero_index(puzzle);
-	return get_puzzle_neighbors(puzzle, zero_index, neighbor_array);
-}
-
-
 void _print_puzzle_statistics(SlidingPuzzle *puzzle){
 	printf("======================================\n");
     printf("Puzzle Statistics:\n======================================\n* Size -> %d x %d\n* Has Predecessor -> %s\n* Is Solvable -> %s\n* Is Solved -> %s\n", 
         puzzle->k, puzzle->k, 
         (puzzle->predecessor_puzzle == NULL) ? "No (NULL)" : "Yes",
-		(!is_puzzle_unsolvable(puzzle)) ? "Yes" : "No",
+		(!puzzle_is_unsolvable(puzzle)) ? "Yes" : "No",
 		(puzzle_is_solved(puzzle)) ? "Yes" : "No");
 }
 
@@ -466,7 +466,7 @@ void _print_zero_neighbors(SlidingPuzzle *puzzle){
 	printf("======================================\n");
 
 	int zero_neighbors [4];
-	get_zero_neighbors(puzzle, zero_neighbors);
+	get_puzzle_neighbor_indexes(puzzle, get_zero_index(puzzle), zero_neighbors);
 	
 	printf("Up Neighbor[%d] = \033[38;5;214m%d\033[0m\n", zero_neighbors[0], (zero_neighbors[0] == -1) ? -1 : puzzle->board[zero_neighbors[0]]);
 	printf("Down Neighbor[%d] = \033[38;5;214m%d\033[0m\n", zero_neighbors[1], (zero_neighbors[1] == -1) ? -1 : puzzle->board[zero_neighbors[1]]);
@@ -484,26 +484,54 @@ void _print_puzzle(SlidingPuzzle *puzzle) {
     _print_puzzle_board(puzzle);
 	_print_zero_neighbors(puzzle);
 }
+SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_queue, PuzzleHashSet * puzzle_hash_set) {
+    if (puzzle_is_solved(initial_puzzle)) {
+        return initial_puzzle;
+    }
 
-SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_queue, PuzzleHashSet * puzzle_hash_set){
-	if(puzzle_is_solved(initial_puzzle)){
-		return initial_puzzle;
-	}
-	
-	int k = initial_puzzle->k;
-	int neighbor_array[k * k];
+    int k = initial_puzzle->k, zero_index, neighbor_index;
+    int neighbor_array[4];
+    int new_board[k*k];
 
-	SlidingPuzzle * current_puzzle = NULL;
-	PuzzleNode * current_node = create_puzzle_node(initial_puzzle);
+    SlidingPuzzle *current_puzzle = NULL, *new_puzzle = NULL;
+    PuzzleNode *current_node = create_puzzle_node(initial_puzzle), *new_node = NULL;
 
-	enqueue_puzzle_node(puzzle_queue, current_node);
-	insert_puzzle_hash_set(puzzle_hash_set, initial_puzzle);
-	
-	while(!puzzle_queue_is_empty(puzzle_queue)){
-		// TODO
-		break;
-	}
-	return NULL;
+    enqueue_puzzle_node(puzzle_queue, current_node);
+    insert_puzzle_hash_set(puzzle_hash_set, initial_puzzle);
+
+    while (!puzzle_queue_is_empty(puzzle_queue)) {
+        current_node = dequeue_puzzle_node(puzzle_queue);
+        current_puzzle = current_node->puzzle;
+
+        zero_index = get_zero_index(current_puzzle);
+        get_puzzle_neighbor_indexes(current_puzzle, zero_index, neighbor_array);
+
+        for (int i = 0; i < 4; i++) {
+            neighbor_index = neighbor_array[i];
+
+            if (neighbor_index != -1) {
+                memcpy(new_board, current_puzzle->board, k * k * sizeof(int));
+                new_puzzle = create_puzzle(k, new_board, current_puzzle);
+				swap_puzzle_at_indexes(new_puzzle, zero_index, neighbor_index);
+			
+
+                if (puzzle_is_solved(new_puzzle)) {
+                    return new_puzzle;
+                }
+
+                if (puzzle_hash_set_contains(puzzle_hash_set, new_puzzle)) {
+                    continue;
+                }
+
+            
+                new_node = create_puzzle_node(new_puzzle);
+                enqueue_puzzle_node(puzzle_queue, new_node);
+                insert_puzzle_hash_set(puzzle_hash_set, new_puzzle);
+            }
+        }
+    }
+
+    return NULL;
 }
 
 
