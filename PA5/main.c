@@ -295,6 +295,19 @@ int get_inverted_pairs(SlidingPuzzle * puzzle){
 	return inverted_pairs;
 }
 
+int puzzle_is_solved(SlidingPuzzle * puzzle) {
+    int k = puzzle->k;
+
+    for (int i = 0; i < (k*k)-1; i++) {
+        if (puzzle->board[i] != i + 1) {
+            return 0;
+        }
+    }
+
+    return puzzle->board[(k*k)-1] == 0;
+}
+
+
 int puzzle_is_unsolvable_by_inverted_pairs(int k, int zero_index, int inverted_pairs){
 	// k is even
 	if (k % 2 == 0) {
@@ -405,10 +418,11 @@ int * get_zero_neighbors(SlidingPuzzle * puzzle, int * neighbor_array){
 
 void _print_puzzle_statistics(SlidingPuzzle *puzzle){
 	printf("======================================\n");
-    printf("Puzzle Statistics:\n======================================\n* Size -> %d x %d\n* Has Predecessor -> %s\n* Is Solvable -> %s\n", 
+    printf("Puzzle Statistics:\n======================================\n* Size -> %d x %d\n* Has Predecessor -> %s\n* Is Solvable -> %s\n* Is Solved -> %s\n", 
         puzzle->k, puzzle->k, 
         (puzzle->predecessor_puzzle == NULL) ? "No (NULL)" : "Yes",
-		(!is_puzzle_unsolvable(puzzle)) ? "Yes" : "No");
+		(!is_puzzle_unsolvable(puzzle)) ? "Yes" : "No",
+		(puzzle_is_solved(puzzle)) ? "Yes" : "No");
 }
 
 void _print_puzzle_board(SlidingPuzzle *puzzle){
@@ -475,6 +489,13 @@ void _print_puzzle(SlidingPuzzle *puzzle) {
 	_print_zero_neighbors(puzzle);
 }
 
+SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_queue, PuzzleHashSet * puzzle_hash_set){
+	if(puzzle_is_solved(initial_puzzle)){
+		return initial_puzzle;
+	}
+	
+	return NULL;
+}
 
 
 
@@ -529,6 +550,13 @@ int main(int argc, char **argv){
 		1.) Implement BFS
 		2.) Output solution
 	*/
+
+	SlidingPuzzle * solved_puzzle = puzzle_bfs(initial_puzzle, puzzle_queue, puzzle_hash_set);
+
+	if(solved_puzzle != NULL){
+		printf("TODO: Reconstruct moves\n");
+		printf("TODO: Write to output file.\n");
+	}
 
 	// Free resources
 	free_puzzle(initial_puzzle);
