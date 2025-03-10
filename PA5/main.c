@@ -160,10 +160,6 @@ void insert_node_puzzle_hash_set_bucket(PuzzleHashSet * puzzle_hash_set,
 
 // Returns 1 if successfully added to set, 0 upon failure
 int insert_puzzle_hash_set(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * puzzle){
-	if(puzzle_hash_set_contains(puzzle_hash_set, puzzle)){
-		return 0;
-	}
-
 	int hash_key = get_sliding_puzzle_hash_key(puzzle_hash_set, puzzle);
 	
 	PuzzleNode * new_node;
@@ -494,6 +490,19 @@ SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_
 		return initial_puzzle;
 	}
 	
+	int k = initial_puzzle->k;
+	int neighbor_array[k * k];
+
+	SlidingPuzzle * current_puzzle = NULL;
+	PuzzleNode * current_node = create_puzzle_node(initial_puzzle);
+
+	enqueue_puzzle_node(puzzle_queue, current_node);
+	insert_puzzle_hash_set(puzzle_hash_set, initial_puzzle);
+	
+	while(!puzzle_queue_is_empty(puzzle_queue)){
+		// TODO
+		break;
+	}
 	return NULL;
 }
 
@@ -553,6 +562,7 @@ int main(int argc, char **argv){
 
 	SlidingPuzzle * solved_puzzle = puzzle_bfs(initial_puzzle, puzzle_queue, puzzle_hash_set);
 
+	// Solution was found
 	if(solved_puzzle != NULL){
 		printf("TODO: Reconstruct moves\n");
 		printf("TODO: Write to output file.\n");
