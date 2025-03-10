@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 // Puzzle Structure(s)
 typedef struct SlidingPuzzle{
@@ -32,17 +31,33 @@ typedef struct PuzzleHashSet{
 }PuzzleHashSet;
 
 
-// k will not be negative here, as per the assignment restrictions
-int create_puzzle_hash_set_capacity_by_k(int k){
-	int capacity = 2;
-	int power = 8;
+void free_puzzle_node(PuzzleNode * puzzle_node){
+	PuzzleNode * current_node = puzzle_node, * next_node = NULL;
 
-	// Calculate power for capacity, starting at 10
-	for(int i = 1; i < k; i++){
-		power += 2;
-	}
-	
-	return pow(capacity, power);
+    while (current_node != NULL) {
+        next_node = current_node->next;
+        free(current_node);
+        current_node = next_node;
+    }
+}
+
+int puzzles_are_the_same(SlidingPuzzle * puzzle_one, SlidingPuzzle * puzzle_two){
+	if(puzzle_one == NULL || puzzle_two == NULL) return 0;
+	// Boards will not have different sizes so, k will suffice
+	int k = puzzle_one->k;
+	return memcmp(puzzle_one->board, puzzle_two->board, sizeof(int) * k * k) == 0;
+}
+
+
+// k will not be negative here, as per the assignment restrictions
+int create_puzzle_hash_set_capacity(int k) {
+    int power = 8;
+    
+    for (int i = 1; i < k; i++) {
+        power += 2;
+    }
+
+    return 1 << power;
 }
 
 PuzzleHashSet *create_puzzle_hash_set(int capacity) {
@@ -57,6 +72,7 @@ PuzzleHashSet *create_puzzle_hash_set(int capacity) {
         return NULL;
     }
 
+	// Initialize to NULL
     for (int i = 0; i < capacity; i++) {
         puzzle_hash_set->buckets[i] = NULL;
     }
@@ -67,9 +83,56 @@ PuzzleHashSet *create_puzzle_hash_set(int capacity) {
     return puzzle_hash_set;
 }
 
+void free_puzzle_hash_set(PuzzleHashSet * puzzle_hash_set){
+	PuzzleNode * current_node = NULL;
 
+	for(int i = 0; i < puzzle_hash_set->capacity; i++){
+		current_node = puzzle_hash_set->buckets[i];
 
+		if(current_node != NULL){
+			free_puzzle_node(current_node);
+		}
+	}
 
+	free(puzzle_hash_set->buckets);
+	free(puzzle_hash_set);
+}
+
+unsigned int get_sliding_puzzle_hash_code(SlidingPuzzle * sliding_puzzle) {
+    unsigned int h = 0;
+    int k = sliding_puzzle->k;
+
+    for (int i = 0; i < k * k; i++) {
+        h = 31 * h + (unsigned int)sliding_puzzle->board[i];
+    }
+
+    return h;
+}
+
+int get_sliding_puzzle_hash_key(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * sliding_puzzle) {
+    return get_sliding_puzzle_hash_code(sliding_puzzle) % puzzle_hash_set->capacity;
+}
+
+int puzzle_hash_set_contains(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * sliding_puzzle){
+	int hash_key = get_sliding_puzzle_hash_key(puzzle_hash_set, sliding_puzzle);
+
+	PuzzleNode * bucket = puzzle_hash_set->buckets[hash_key];
+	PuzzleNode * current_node = bucket;
+
+	while(current_node != NULL){
+		if(puzzles_are_the_same(current_node->puzzle, sliding_puzzle)){
+			return 1;
+		}
+		current_node = current_node->next;
+	}
+
+	return 0;
+}
+
+// Returns 1 if successfully added to set, 0 if element was already apart of set
+int insert_puzzle_hash_set(SlidingPuzzle * puzzle){
+
+}
 
 
 // Queue Functions
@@ -108,18 +171,6 @@ PuzzleNode * create_puzzle_node(SlidingPuzzle * puzzle) {
 	
     return puzzle_node;
 }
-
-
-void free_puzzle_node(PuzzleNode * puzzle_node){
-	PuzzleNode * current = puzzle_node, * next_node = NULL;
-
-    while (current != NULL) {
-        next_node = current->next;
-        free(current);
-        current = next_node;
-    }
-}
-
 
 /*
 Assumes puzzle_queue and puzzle_node are non-NULL
@@ -327,12 +378,6 @@ int * get_zero_neighbors(SlidingPuzzle * puzzle, int * neighbor_array){
 	return get_puzzle_neighbors(puzzle, zero_index, neighbor_array);
 }
 
-int puzzles_are_the_same(SlidingPuzzle * puzzle_one, SlidingPuzzle * puzzle_two){
-	if(puzzle_one == NULL || puzzle_two == NULL) return 0;
-	// Boards will not have different sizes so, k will suffice
-	int k = puzzle_one->k;
-	return memcmp(puzzle_one->board, puzzle_two->board, sizeof(int) * k * k) == 0;
-}
 
 void _print_puzzle_statistics(SlidingPuzzle *puzzle){
 	printf("======================================\n");
@@ -446,16 +491,27 @@ int main(int argc, char **argv){
 		return EXIT_FAILURE;
 	}
 
+	PuzzleHashSet * puzzle_hash_set;
+	if((puzzle_hash_set = create_puzzle_hash_set(create_puzzle_hash_set_capacity(initial_puzzle->k))) == NULL){
+		fprintf(stderr, "Unable to allocate memory for puzzle hash set.\n");
+		free_puzzle(initial_puzzle);
+		free_puzzle_queue(puzzle_queue);
+		close_input_and_output_file(input_file, output_file);
+		return EXIT_FAILURE;
+	}
+
 	/*
 	TODO:
-		1.) Implement Hash Table to keep track of created boards
+		1.) Implement Hash Set to keep track of created boards
 		2.) Implement BFS
 		2.5) Maybe implement adjacency list???
 		3.) Output solution
 	*/
+
 	// Free resources
 	free_puzzle(initial_puzzle);
 	free_puzzle_queue(puzzle_queue);
+	free_puzzle_hash_set(puzzle_hash_set);
 	close_input_and_output_file(input_file, output_file);
 	return EXIT_SUCCESS;
 }
