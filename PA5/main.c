@@ -515,11 +515,12 @@ SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_
 				swap_puzzle_at_indexes(new_puzzle, zero_index, neighbor_index);
 			
 
-                if (puzzle_is_solved(new_puzzle)) {
+                if (puzzle_is_solved(new_puzzle)){
                     return new_puzzle;
                 }
 
                 if (puzzle_hash_set_contains(puzzle_hash_set, new_puzzle)) {
+					free_puzzle(new_puzzle);
                     continue;
                 }
 
