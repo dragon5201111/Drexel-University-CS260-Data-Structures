@@ -30,6 +30,27 @@ typedef struct PuzzleHashSet{
 	PuzzleNode ** buckets;
 }PuzzleHashSet;
 
+/*
+* Creates a new PuzzleNode.
+* Assumes puzzle is non-NULL.
+* Returns:
+*     - PuzzleNode pointer if successful, otherwise NULL.
+*/
+PuzzleNode * create_puzzle_node(SlidingPuzzle * puzzle) {
+    if (puzzle == NULL) {
+        return NULL;
+    }
+
+    PuzzleNode * puzzle_node;
+    if ((puzzle_node = (PuzzleNode *)malloc(sizeof(PuzzleNode))) == NULL) {
+        return NULL;
+    }
+    puzzle_node->next = NULL;
+    puzzle_node->puzzle = puzzle;
+    
+    return puzzle_node;
+}
+
 
 void free_puzzle_node(PuzzleNode * puzzle_node){
 	PuzzleNode * current_node = puzzle_node, * next_node = NULL;
@@ -98,29 +119,29 @@ void free_puzzle_hash_set(PuzzleHashSet * puzzle_hash_set){
 	free(puzzle_hash_set);
 }
 
-unsigned int get_sliding_puzzle_hash_code(SlidingPuzzle * sliding_puzzle) {
+unsigned int get_sliding_puzzle_hash_code(SlidingPuzzle * puzzle) {
     unsigned int h = 0;
-    int k = sliding_puzzle->k;
+    int k = puzzle->k;
 
     for (int i = 0; i < k * k; i++) {
-        h = 31 * h + (unsigned int)sliding_puzzle->board[i];
+        h = 31 * h + (unsigned int)puzzle->board[i];
     }
 
     return h;
 }
 
-int get_sliding_puzzle_hash_key(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * sliding_puzzle) {
-    return get_sliding_puzzle_hash_code(sliding_puzzle) % puzzle_hash_set->capacity;
+int get_sliding_puzzle_hash_key(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * puzzle) {
+    return get_sliding_puzzle_hash_code(puzzle) % puzzle_hash_set->capacity;
 }
 
-int puzzle_hash_set_contains(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * sliding_puzzle){
-	int hash_key = get_sliding_puzzle_hash_key(puzzle_hash_set, sliding_puzzle);
+int puzzle_hash_set_contains(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * puzzle){
+	int hash_key = get_sliding_puzzle_hash_key(puzzle_hash_set, puzzle);
 
 	PuzzleNode * bucket = puzzle_hash_set->buckets[hash_key];
 	PuzzleNode * current_node = bucket;
 
 	while(current_node != NULL){
-		if(puzzles_are_the_same(current_node->puzzle, sliding_puzzle)){
+		if(puzzles_are_the_same(current_node->puzzle, puzzle)){
 			return 1;
 		}
 		current_node = current_node->next;
@@ -129,9 +150,30 @@ int puzzle_hash_set_contains(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * sl
 	return 0;
 }
 
-// Returns 1 if successfully added to set, 0 if element was already apart of set
-int insert_puzzle_hash_set(SlidingPuzzle * puzzle){
+void insert_node_puzzle_hash_set_bucket(PuzzleHashSet * puzzle_hash_set, 
+	PuzzleNode * puzzle_node, int bucket_index){
+	
+	puzzle_node->next = puzzle_hash_set->buckets[bucket_index];
+	puzzle_hash_set->buckets[bucket_index] = puzzle_node;
+	puzzle_hash_set->size++;
+}
 
+// Returns 1 if successfully added to set, 0 upon failure
+int insert_puzzle_hash_set(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * puzzle){
+	if(puzzle_hash_set_contains(puzzle_hash_set, puzzle)){
+		return 0;
+	}
+
+	int hash_key = get_sliding_puzzle_hash_key(puzzle_hash_set, puzzle);
+	
+	PuzzleNode * new_node;
+	if((new_node = create_puzzle_node(puzzle)) == NULL){
+		return 0;
+	}
+
+
+	insert_node_puzzle_hash_set_bucket(puzzle_hash_set, new_node, hash_key);
+	return 1;
 }
 
 
@@ -151,26 +193,6 @@ PuzzleQueue * create_puzzle_queue() {
     return puzzle_queue;
 }
 
-/*
-* Creates a new PuzzleNode.
-* Assumes puzzle is non-NULL.
-* Returns:
-*     - PuzzleNode pointer if successful, otherwise NULL.
-*/
-PuzzleNode * create_puzzle_node(SlidingPuzzle * puzzle) {
-	if (puzzle == NULL) {
-        return NULL;
-    }
-
-    PuzzleNode * puzzle_node;
-    if((puzzle_node = (PuzzleNode *) malloc(sizeof(PuzzleNode))) == NULL) {
-        return NULL;
-    }
-    puzzle_node->next = NULL;
-    puzzle_node->puzzle = puzzle;
-	
-    return puzzle_node;
-}
 
 /*
 Assumes puzzle_queue and puzzle_node are non-NULL
@@ -326,8 +348,10 @@ SlidingPuzzle * create_puzzle_from_input_file(FILE * input_file){
 	fscanf(input_file, "%d\n", &k);
 
 	// Skip next line
-	if(getline(&line_buffer, (size_t *)&line_buffer_size, input_file) == -1)
+	if(getline(&line_buffer, (size_t *)&line_buffer_size, input_file) == -1){
+		free(line_buffer);
 		return NULL;
+	}
 
 	int input_board[k * k];
 	for(int i = 0; i < k * k; i++)
@@ -472,7 +496,7 @@ int main(int argc, char **argv){
 	}
 	
 	// Create initial gameboard from input file
-	SlidingPuzzle * initial_puzzle;
+	SlidingPuzzle * initial_puzzle = NULL;
 	if((initial_puzzle = create_puzzle_from_input_file(input_file)) == NULL){
 		fprintf(stderr, "Unable to create initial sliding puzzle.\n");
 		close_input_and_output_file(input_file, output_file);
@@ -480,10 +504,10 @@ int main(int argc, char **argv){
 	}
 
 	// Debug print
-	_print_puzzle(initial_puzzle);
+	//_print_puzzle(initial_puzzle);
 
 	// Create queue
-	PuzzleQueue * puzzle_queue;
+	PuzzleQueue * puzzle_queue = NULL;
 	if((puzzle_queue = create_puzzle_queue()) == NULL){
 		fprintf(stderr, "Unable to allocate memory for puzzle queue.\n");
 		free_puzzle(initial_puzzle);
@@ -491,7 +515,7 @@ int main(int argc, char **argv){
 		return EXIT_FAILURE;
 	}
 
-	PuzzleHashSet * puzzle_hash_set;
+	PuzzleHashSet * puzzle_hash_set = NULL;
 	if((puzzle_hash_set = create_puzzle_hash_set(create_puzzle_hash_set_capacity(initial_puzzle->k))) == NULL){
 		fprintf(stderr, "Unable to allocate memory for puzzle hash set.\n");
 		free_puzzle(initial_puzzle);
@@ -502,10 +526,8 @@ int main(int argc, char **argv){
 
 	/*
 	TODO:
-		1.) Implement Hash Set to keep track of created boards
-		2.) Implement BFS
-		2.5) Maybe implement adjacency list???
-		3.) Output solution
+		1.) Implement BFS
+		2.) Output solution
 	*/
 
 	// Free resources
