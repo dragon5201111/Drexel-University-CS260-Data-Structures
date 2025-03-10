@@ -1,24 +1,73 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
-// Puzzle Structure
+// Puzzle Structure(s)
 typedef struct SlidingPuzzle{
 	int k;
 	int * board;
 	struct SlidingPuzzle * predecessor_puzzle;
 }SlidingPuzzle;
 
-// Queue Structures
-typedef struct PuzzleQueueNode{
+// Node structure(s)
+typedef struct PuzzleNode{
 	SlidingPuzzle * puzzle;
-	struct PuzzleQueueNode * next;
-}PuzzleQueueNode;
+	struct PuzzleNode * next;
+}PuzzleNode;
 
+
+// Queue Structures
 typedef struct PuzzleQueue{
-	PuzzleQueueNode * head;
-	PuzzleQueueNode * tail;
+	PuzzleNode * head;
+	PuzzleNode * tail;
 }PuzzleQueue;
+
+
+// Hash Set Structure(s)
+typedef struct PuzzleHashSet{
+	int size;
+	int capacity;
+	PuzzleNode ** buckets;
+}PuzzleHashSet;
+
+
+// k will not be negative here, as per the assignment restrictions
+int create_puzzle_hash_set_capacity_by_k(int k){
+	int capacity = 2;
+	int power = 8;
+
+	// Calculate power for capacity, starting at 10
+	for(int i = 1; i < k; i++){
+		power += 2;
+	}
+	
+	return pow(capacity, power);
+}
+
+PuzzleHashSet *create_puzzle_hash_set(int capacity) {
+    PuzzleHashSet *puzzle_hash_set;
+
+    if ((puzzle_hash_set = (PuzzleHashSet *)malloc(sizeof(PuzzleHashSet))) == NULL) {
+        return NULL;
+    }
+
+    if ((puzzle_hash_set->buckets = (PuzzleNode **)malloc(sizeof(PuzzleNode *) * capacity)) == NULL) {
+        free(puzzle_hash_set);
+        return NULL;
+    }
+
+    for (int i = 0; i < capacity; i++) {
+        puzzle_hash_set->buckets[i] = NULL;
+    }
+
+    puzzle_hash_set->size = 0;
+    puzzle_hash_set->capacity = capacity;
+
+    return puzzle_hash_set;
+}
+
+
 
 
 
@@ -40,40 +89,53 @@ PuzzleQueue * create_puzzle_queue() {
 }
 
 /*
-* Creates a new PuzzleQueueNode.
+* Creates a new PuzzleNode.
 * Assumes puzzle is non-NULL.
 * Returns:
-*     - PuzzleQueueNode pointer if successful, otherwise NULL.
+*     - PuzzleNode pointer if successful, otherwise NULL.
 */
-PuzzleQueueNode * create_puzzle_queue_node(SlidingPuzzle * puzzle) {
+PuzzleNode * create_puzzle_node(SlidingPuzzle * puzzle) {
 	if (puzzle == NULL) {
         return NULL;
     }
 
-    PuzzleQueueNode * puzzle_queue_node;
-    if((puzzle_queue_node = (PuzzleQueueNode *) malloc(sizeof(PuzzleQueueNode))) == NULL) {
+    PuzzleNode * puzzle_node;
+    if((puzzle_node = (PuzzleNode *) malloc(sizeof(PuzzleNode))) == NULL) {
         return NULL;
     }
-    puzzle_queue_node->next = NULL;
-    puzzle_queue_node->puzzle = puzzle;
-    return puzzle_queue_node;
+    puzzle_node->next = NULL;
+    puzzle_node->puzzle = puzzle;
+	
+    return puzzle_node;
 }
 
+
+void free_puzzle_node(PuzzleNode * puzzle_node){
+	PuzzleNode * current = puzzle_node, * next_node = NULL;
+
+    while (current != NULL) {
+        next_node = current->next;
+        free(current);
+        current = next_node;
+    }
+}
+
+
 /*
-Assumes puzzle_queue and puzzle_queue_node are non-NULL
+Assumes puzzle_queue and puzzle_node are non-NULL
 Returns:
     - PuzzleQueue* on success, otherwise NULL
 */
-PuzzleQueue * enqueue_puzzle_queue_node(PuzzleQueue * puzzle_queue, PuzzleQueueNode * puzzle_queue_node) {
-    if (puzzle_queue == NULL || puzzle_queue_node == NULL) {
+PuzzleQueue * enqueue_puzzle_node(PuzzleQueue * puzzle_queue, PuzzleNode * puzzle_node) {
+    if (puzzle_queue == NULL || puzzle_node == NULL) {
         return NULL; // Sanity check
     }
 
 	if (puzzle_queue->head == NULL) {
-        puzzle_queue->head = puzzle_queue->tail = puzzle_queue_node;
+        puzzle_queue->head = puzzle_queue->tail = puzzle_node;
     } else {
-        puzzle_queue->tail->next = puzzle_queue_node;
-        puzzle_queue->tail = puzzle_queue_node;
+        puzzle_queue->tail->next = puzzle_node;
+        puzzle_queue->tail = puzzle_node;
     }
     return puzzle_queue;
 }
@@ -81,14 +143,14 @@ PuzzleQueue * enqueue_puzzle_queue_node(PuzzleQueue * puzzle_queue, PuzzleQueueN
 /*
 Assumes puzzle_queue is non-NULL
 Returns:
-    - PuzzleQueueNode* on success, NULL on failure
+    - PuzzleNode* on success, NULL on failure
 */
-PuzzleQueueNode * dequeue_puzzle_queue_node(PuzzleQueue * puzzle_queue){
+PuzzleNode * dequeue_puzzle_node(PuzzleQueue * puzzle_queue){
 	if (puzzle_queue == NULL || puzzle_queue->head == NULL) {
         return NULL;
     }
 	
-	PuzzleQueueNode * dequeued_node = puzzle_queue->head;
+	PuzzleNode * dequeued_node = puzzle_queue->head;
 	puzzle_queue->head = puzzle_queue->head->next;
 
 	if(puzzle_queue->head == NULL){
@@ -99,12 +161,7 @@ PuzzleQueueNode * dequeue_puzzle_queue_node(PuzzleQueue * puzzle_queue){
 }
 
 void free_puzzle_queue(PuzzleQueue * puzzle_queue) {
-    PuzzleQueueNode * current = puzzle_queue->head;
-    while (current != NULL) {
-        PuzzleQueueNode * next_node = current->next;
-        free(current);
-        current = next_node;
-    }
+	free_puzzle_node(puzzle_queue->head);
     free(puzzle_queue);
 }
 
@@ -396,7 +453,6 @@ int main(int argc, char **argv){
 		2.5) Maybe implement adjacency list???
 		3.) Output solution
 	*/
-
 	// Free resources
 	free_puzzle(initial_puzzle);
 	free_puzzle_queue(puzzle_queue);

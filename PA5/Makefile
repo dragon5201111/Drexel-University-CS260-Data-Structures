@@ -13,7 +13,7 @@ TARGET_SOLUTION=solution
 
 # $@ = target, $^ = pre-reqs
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 # $< = first pre-req
 %.o: %.c
