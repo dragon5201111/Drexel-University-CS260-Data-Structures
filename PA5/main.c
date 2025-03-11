@@ -589,15 +589,9 @@ int main(int argc, char **argv){
 
 	SlidingPuzzle * solved_puzzle = puzzle_bfs(initial_puzzle, puzzle_queue, puzzle_hash_set);
 
-	// Solution was found
-	if(solved_puzzle != NULL){
-		printf("TODO: Reconstruct moves\n");
-		printf("TODO: Write to output file.\n");
-	}
-
 	// Free resources
 	free_puzzle(solved_puzzle);
-	free_puzzle(initial_puzzle);
+	// free_puzzle(initial_puzzle);
 	free_puzzle_queue(puzzle_queue);
 	free_puzzle_hash_set(puzzle_hash_set);
 	close_input_and_output_file(input_file, output_file);
