@@ -9,7 +9,7 @@
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/main",
-        "args": ["./test_input/3_easy.txt", "./test_output/3_easy_out.txt"],
+        "args": ["./test_input/3_unsolvable.txt", "./test_output/3_easy_out.txt"],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",
         "environment": [],

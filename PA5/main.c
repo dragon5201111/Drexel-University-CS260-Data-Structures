@@ -51,6 +51,17 @@ PuzzleNode * create_puzzle_node(SlidingPuzzle * puzzle) {
     return puzzle_node;
 }
 
+void free_puzzle(SlidingPuzzle *puzzle) {
+    if (puzzle == NULL) return;
+
+	if(puzzle->board != NULL){
+    	free(puzzle->board);
+	}
+
+    free(puzzle);
+}
+
+
 
 void free_puzzle_node(PuzzleNode * puzzle_node){
 	PuzzleNode *current_node = puzzle_node, * next_node = NULL;
@@ -119,16 +130,17 @@ void free_puzzle_hash_set(PuzzleHashSet * puzzle_hash_set){
 	free(puzzle_hash_set);
 }
 
-unsigned int get_sliding_puzzle_hash_code(SlidingPuzzle * puzzle) {
-    unsigned int h = 0;
+unsigned int get_sliding_puzzle_hash_code(SlidingPuzzle *puzzle) {
+    unsigned int h = 5381;  // DJB2 starts with this prime number
     int k = puzzle->k;
 
     for (int i = 0; i < k * k; i++) {
-        h = 31 * h + (unsigned int)puzzle->board[i];
+        h = ((h << 5) + h) + puzzle->board[i];  // h * 33 + puzzle->board[i]
     }
 
     return h;
 }
+
 
 int get_sliding_puzzle_hash_key(PuzzleHashSet * puzzle_hash_set, SlidingPuzzle * puzzle) {
     return get_sliding_puzzle_hash_code(puzzle) % puzzle_hash_set->capacity;
@@ -370,16 +382,6 @@ SlidingPuzzle * create_puzzle_from_input_file(FILE * input_file){
 	return create_puzzle(k, input_board, NULL);
 }
 
-void free_puzzle(SlidingPuzzle *puzzle) {
-    if (puzzle == NULL) return;
-
-	if(puzzle->board != NULL){
-    	free(puzzle->board);
-	}
-
-    free(puzzle);
-}
-
 int row_and_column_in_puzzle_bounds(int row, int column, int k){
 	return (row >= 0 && column >=0 && row < k && column < k);
 }
@@ -489,9 +491,12 @@ SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_
         return initial_puzzle;
     }
 
+	if(puzzle_is_unsolvable(initial_puzzle)){
+		return NULL;
+	}
+
     int k = initial_puzzle->k, zero_index, neighbor_index;
     int neighbor_array[4];
-    int new_board[k*k];
 
     SlidingPuzzle *current_puzzle = NULL, *new_puzzle = NULL;
     PuzzleNode *current_node = create_puzzle_node(initial_puzzle), *new_node = NULL;
@@ -510,9 +515,9 @@ SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_
             neighbor_index = neighbor_array[i];
 
             if (neighbor_index != -1) {
-                memcpy(new_board, current_puzzle->board, k * k * sizeof(int));
-                new_puzzle = create_puzzle(k, new_board, current_puzzle);
+                new_puzzle = create_puzzle(k, current_puzzle->board, current_puzzle);
 				swap_puzzle_at_indexes(new_puzzle, zero_index, neighbor_index);
+
 				
 				if (puzzle_hash_set_contains(puzzle_hash_set, new_puzzle) || puzzle_is_unsolvable(new_puzzle)) {
 					free_puzzle(new_puzzle);
@@ -520,6 +525,7 @@ SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_
                 }
 
                 if (puzzle_is_solved(new_puzzle)){
+					free(current_node);
                     return new_puzzle;
                 }
             
@@ -528,11 +534,50 @@ SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_
                 insert_puzzle_hash_set(puzzle_hash_set, new_puzzle);
             }
         }
+
+		free(current_node);
     }
 
     return NULL;
 }
 
+
+void write_solved_puzzle_to_output_file(SlidingPuzzle *solved_puzzle, FILE *output_file) {
+    if (solved_puzzle == NULL) {
+		fprintf(output_file, "#moves\n");
+        fprintf(output_file, "no solution\n");
+		return;
+    }
+
+    int k = solved_puzzle->k;
+
+    SlidingPuzzle *current_puzzle = solved_puzzle;
+    SlidingPuzzle *predecessor_puzzle;
+
+    int move_count = 0;
+    char moves[10000];
+
+	while (current_puzzle->predecessor_puzzle != NULL) {
+        predecessor_puzzle = current_puzzle->predecessor_puzzle;
+
+        for (int i = 0; i < k * k; i++) {
+            if (current_puzzle->board[i] != predecessor_puzzle->board[i]) {
+                if (current_puzzle->board[i] != 0) {
+                    moves[move_count++] = current_puzzle->board[i];
+                }
+            }
+        }
+
+        current_puzzle = predecessor_puzzle;
+    }
+
+	fprintf(output_file, "#moves\n");
+
+    for (int i = move_count - 1; i >= 0; i--) {
+        fprintf(output_file, "%d ", moves[i]);
+    }
+    fprintf(output_file, "\n");
+}
 
 
 
@@ -581,17 +626,13 @@ int main(int argc, char **argv){
 		return EXIT_FAILURE;
 	}
 
-	/*
-	TODO:
-		1.) Implement BFS
-		2.) Output solution
-	*/
-
 	SlidingPuzzle * solved_puzzle = puzzle_bfs(initial_puzzle, puzzle_queue, puzzle_hash_set);
+
+	write_solved_puzzle_to_output_file(solved_puzzle, output_file);
 
 	// Free resources
 	free_puzzle(solved_puzzle);
-	// free_puzzle(initial_puzzle);
+	free_puzzle(initial_puzzle);
 	free_puzzle_queue(puzzle_queue);
 	free_puzzle_hash_set(puzzle_hash_set);
 	close_input_and_output_file(input_file, output_file);
