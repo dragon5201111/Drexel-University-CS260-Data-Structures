@@ -53,7 +53,7 @@ PuzzleNode * create_puzzle_node(SlidingPuzzle * puzzle) {
 
 
 void free_puzzle_node(PuzzleNode * puzzle_node){
-	PuzzleNode * current_node = puzzle_node, * next_node = NULL;
+	PuzzleNode *current_node = puzzle_node, * next_node = NULL;
 
     while (current_node != NULL) {
         next_node = current_node->next;
@@ -513,17 +513,15 @@ SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_
                 memcpy(new_board, current_puzzle->board, k * k * sizeof(int));
                 new_puzzle = create_puzzle(k, new_board, current_puzzle);
 				swap_puzzle_at_indexes(new_puzzle, zero_index, neighbor_index);
-			
-
-                if (puzzle_is_solved(new_puzzle)){
-                    return new_puzzle;
-                }
-
-                if (puzzle_hash_set_contains(puzzle_hash_set, new_puzzle)) {
+				
+				if (puzzle_hash_set_contains(puzzle_hash_set, new_puzzle) || puzzle_is_unsolvable(new_puzzle)) {
 					free_puzzle(new_puzzle);
                     continue;
                 }
 
+                if (puzzle_is_solved(new_puzzle)){
+                    return new_puzzle;
+                }
             
                 new_node = create_puzzle_node(new_puzzle);
                 enqueue_puzzle_node(puzzle_queue, new_node);
@@ -598,6 +596,7 @@ int main(int argc, char **argv){
 	}
 
 	// Free resources
+	free_puzzle(solved_puzzle);
 	free_puzzle(initial_puzzle);
 	free_puzzle_queue(puzzle_queue);
 	free_puzzle_hash_set(puzzle_hash_set);
