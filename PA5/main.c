@@ -339,6 +339,7 @@ int puzzle_is_unsolvable(SlidingPuzzle * puzzle) {
 	return puzzle_is_unsolvable_by_inverted_pairs(k, zero_index, inverted_pairs);
 }
 
+
 SlidingPuzzle * create_puzzle(int k, int * board, SlidingPuzzle * predecessor_puzzle){
 	SlidingPuzzle * sliding_puzzle;
 	if((sliding_puzzle = (SlidingPuzzle *)malloc(sizeof(SlidingPuzzle))) == NULL)
