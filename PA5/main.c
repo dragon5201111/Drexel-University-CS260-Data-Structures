@@ -488,6 +488,7 @@ void _print_puzzle(SlidingPuzzle *puzzle) {
 	_print_zero_neighbors(puzzle);
 }
 SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_queue, PuzzleHashSet * puzzle_hash_set) {
+    // If the puzzle is already solved, return it immediately
     if (puzzle_is_solved(initial_puzzle)) {
         return initial_puzzle;
     }
@@ -496,50 +497,48 @@ SlidingPuzzle * puzzle_bfs(SlidingPuzzle * initial_puzzle, PuzzleQueue * puzzle_
 		return NULL;
 	}
 
-    int k = initial_puzzle->k, zero_index, neighbor_index;
-    int neighbor_array[4];
-
-    SlidingPuzzle *current_puzzle = NULL, *new_puzzle = NULL;
-    PuzzleNode *current_node = create_puzzle_node(initial_puzzle), *new_node = NULL;
-
-    enqueue_puzzle_node(puzzle_queue, current_node);
+    // Add the initial puzzle to the queue and hash set
+    PuzzleNode *initial_node = create_puzzle_node(initial_puzzle);
+    enqueue_puzzle_node(puzzle_queue, initial_node);
     insert_puzzle_hash_set(puzzle_hash_set, initial_puzzle);
 
     while (!puzzle_queue_is_empty(puzzle_queue)) {
-        current_node = dequeue_puzzle_node(puzzle_queue);
-        current_puzzle = current_node->puzzle;
+        PuzzleNode *current_node = dequeue_puzzle_node(puzzle_queue);
+        SlidingPuzzle *current_puzzle = current_node->puzzle;
+        free(current_node);
 
-        zero_index = get_zero_index(current_puzzle);
-        get_puzzle_neighbor_indexes(current_puzzle, zero_index, neighbor_array);
+        int zero_index = get_zero_index(current_puzzle);
+        int neighbor_indices[4];
+        get_puzzle_neighbor_indexes(current_puzzle, zero_index, neighbor_indices);
 
         for (int i = 0; i < 4; i++) {
-            neighbor_index = neighbor_array[i];
+            if (neighbor_indices[i] == -1) {
+                continue; // Skip invalid moves
+            }
 
-            if (neighbor_index != -1) {
-                new_puzzle = create_puzzle(k, current_puzzle->board, current_puzzle);
-				swap_puzzle_at_indexes(new_puzzle, zero_index, neighbor_index);
+            SlidingPuzzle *new_puzzle = create_puzzle(current_puzzle->k, current_puzzle->board, current_puzzle);
+            swap_puzzle_at_indexes(new_puzzle, zero_index, neighbor_indices[i]);
 
-				
-				if (puzzle_hash_set_contains(puzzle_hash_set, new_puzzle) || puzzle_is_unsolvable(new_puzzle)) {
-					free_puzzle(new_puzzle);
-                    continue;
-                }
+			if (puzzle_is_solved(new_puzzle)) {
+				return new_puzzle;
+			}
 
-                if (puzzle_is_solved(new_puzzle)){
-					free(current_node);
-                    return new_puzzle;
-                }
-            
-                new_node = create_puzzle_node(new_puzzle);
+			if(puzzle_is_unsolvable(new_puzzle)){
+				free_puzzle(new_puzzle);
+				continue;
+			}
+
+            if (!puzzle_hash_set_contains(puzzle_hash_set, new_puzzle)) {
+                PuzzleNode *new_node = create_puzzle_node(new_puzzle);
                 enqueue_puzzle_node(puzzle_queue, new_node);
                 insert_puzzle_hash_set(puzzle_hash_set, new_puzzle);
+            } else {
+                free_puzzle(new_puzzle);
             }
         }
-
-		free(current_node);
     }
 
-    return NULL;
+    return NULL; // No solution found
 }
 
 
